@@ -61,6 +61,5 @@ tenants. The server binds to loopback and applies owner/consumer authentication
 and origin restrictions. Local encryption and key hashing are not a substitute
 for device security or an independent security review.
 
-See [Security](../SECURITY.md) for the detailed threat model, the
-[user guide](user-guide.md) for operational behavior and the
-[historical implementation reference](reference.md) for deeper feature notes.
+See [Security](../SECURITY.md) for the detailed threat model and the
+[user guide](user-guide.md) for operational behavior.

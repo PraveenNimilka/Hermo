@@ -1,27 +1,47 @@
 # Hermo
 
-Turn website workflows into local REST APIs and MCP tools.
+**Turn website workflows into local REST APIs and MCP tools.**
 
-Hermo is an early-access developer tool. Record a task in an authorized browser,
-define its inputs and outputs, test the result, and call the published workflow
-from your application. Execution stays on your computer.
+Hermo records browser tasks as reusable APIs for applications, scripts and AI
+agents. Define inputs, select outputs, test the result, and publish a local endpoint.
 
-## What it does
+[Installation](docs/installation.md) · [User guide](docs/user-guide.md) ·
+[Architecture](docs/architecture.md) · [Contributing](CONTRIBUTING.md)
 
-- Connect an existing Chrome tab or use a separate local browser for retrieval.
-- Record controls, bind dynamic inputs, and extract structured data or media URLs.
-- Verify results before publishing a workflow-scoped API.
-- Inspect runs, repair drafts, and publish or roll back immutable revisions.
-- Use REST, generated OpenAPI documentation, or scoped MCP tools.
+Hermo is in early access. Execution requires the local runtime and an authorized browser session.
 
-It works with supported searches, catalogs, dashboards, forms and internal tools
-as well as AI websites. Website permissions and technical limits still apply.
+## Capabilities
+
+- **Browser workflows** — record a connected Chrome tab or use a separate local browser for read-only retrieval.
+- **Typed contracts** — bind dynamic inputs and extract nested objects, lists, scalar values and media URLs.
+- **Verified execution** — check outputs, inspect failures, and poll queued runs through REST or MCP.
+- **Stable publication** — publish immutable revisions, edit drafts, and roll back published workflows.
+- **Scoped access** — issue workflow-specific keys, revoke access, and generate OpenAPI documentation.
+
+Use Hermo for supported searches, catalogs, dashboards, forms, internal tools and
+AI websites. Website permissions and technical limits still apply.
+
+## How it works
+
+Publishing saves the tested workflow revision and issues a scoped key. Each API
+request is authenticated and validated before entering a durable queue. The
+runtime executes the authorized steps and checks the outputs; clients poll the
+run ID for validated JSON or an explicit failure.
+
+| Part | Technology | Responsibility |
+| --- | --- | --- |
+| Dashboard | React, TypeScript | Connect websites, edit workflows and inspect runs |
+| Local runtime | Node.js, Fastify, SQLite | Authenticate requests, queue work and persist results |
+| Chrome companion | Manifest V3 | Operate the explicitly authorized website tab |
+| Browser adapters | Companion commands or Playwright | Execute the same workflow contract within each mode's permissions |
+
+The dashboard can close while the runtime continues serving REST and MCP requests.
 
 ## Quick start
 
 Requires **Node.js 24+**, npm and Git. Selected-tab workflows need **Chrome 120+**.
-The release checks run on Windows; see the [installation guide](docs/installation.md)
-for other platforms, encryption keys, browser installation and upgrades.
+Release checks run on Windows. The [installation guide](docs/installation.md)
+covers other platforms, encryption keys, browser installation and upgrades.
 
 Windows PowerShell:
 
@@ -33,15 +53,19 @@ npm.cmd run build
 npm.cmd start
 ```
 
-Open [127.0.0.1:4317](http://127.0.0.1:4317) and create a workspace password.
-Keep the runtime terminal running. Closing the dashboard does not stop APIs.
+Open [http://127.0.0.1:4317](http://127.0.0.1:4317) and create a workspace password.
+Keep the runtime terminal running; the dashboard can be closed independently.
 
-Load [`companion/browser`](companion/browser/README.md) as an unpacked extension
-at `chrome://extensions`. Set its runtime address to `http://127.0.0.1:4317`;
-the companion's initial saved address uses port 4318 and must match your runtime.
-Authorize a website connection in Hermo and pair its selected tab with the code.
+To connect a website:
 
-## Your first API
+1. Load [`companion/browser`](companion/browser/README.md) as an unpacked extension
+   at `chrome://extensions`.
+2. Set the companion's **Local runtime address** to `http://127.0.0.1:4317`.
+   Its initial saved address uses port 4318; it must match your running instance.
+3. Create a website connection in Hermo, generate its Connect code, and authorize
+   the selected website tab through the companion.
+
+## Create and call an API
 
 1. Open **Actions → Create action** and choose the connected website.
 2. Record the task, or select outputs directly for an extraction workflow.
@@ -59,11 +83,11 @@ curl -X POST 'http://127.0.0.1:4317/v1/actions/catalog.lookup/versions/1/runs' \
   --data '{"input":{"search_query":"laptop"}}'
 ```
 
-This is an illustrative contract, not a bundled workflow. Admission returns
-HTTP 202 with `run_id` and `status_url`. Poll that URL with the same key; read
-`result` only when `status` is `succeeded`. Preserve the same input and idempotency
-key when recovering a lost receipt. The [user guide](docs/user-guide.md) covers
-recording, typed outputs, polling, MCP, media and workflow repair.
+The example contract is illustrative; create your own workflow first. An accepted
+request returns HTTP 202 with `run_id` and `status_url`. Poll that URL with the
+same key, and read `result` only when `status` is `succeeded`. Preserve the input
+and idempotency key when recovering a lost receipt. See the [user guide](docs/user-guide.md)
+for polling, MCP, media outputs and workflow repair.
 
 ## Configuration
 
@@ -91,16 +115,23 @@ public/           Served guides, examples and local practice pages
 tests/            Runtime, browser, security and workflow regression tests
 validation-apps/  Independent REST/MCP consumer applications
 scripts/          Explicit integration and public-site verification tools
-docs/             Installation, usage, architecture and historical evidence
+docs/             Installation, usage, configuration and architecture
 ```
 
 ## Development
 
-Run `npm ci`, `npm run build`, `npm test` and `npm run test:consumers`.
-On PowerShell, use `npm.cmd` if your execution policy blocks npm's shell shim.
-Install test Chromium with `npx playwright install chromium` if needed.
+```sh
+npm ci
+npx playwright install chromium
+npm run build
+npm test
+npm run test:consumers
+```
+
+On PowerShell, use `npm.cmd` and `npx.cmd` if execution policy blocks shell shims.
 There is no separate lint command; the build includes TypeScript checking.
-See [Contributing](CONTRIBUTING.md) before running external-site checks.
+Tests use disposable state. See [Contributing](CONTRIBUTING.md) before running
+external-site checks; never use an existing owner's workspace for tests.
 
 ## Current limits
 
@@ -115,8 +146,9 @@ See [Contributing](CONTRIBUTING.md) before running external-site checks.
   retrying. Cancellation cannot undo changes already made there.
 - This is a loopback service, not a public hosting deployment or security audit.
 
-Read the [documentation index](docs/README.md), [architecture](docs/architecture.md)
-and [Security](SECURITY.md) for the operational boundaries.
+See the [documentation index](docs/README.md) and [Security](SECURITY.md) for operational details.
+
+## License
 
 Authored code is [MIT licensed](LICENSE). See [third-party notices](THIRD-PARTY-NOTICES.md)
 for bundled dependencies, fonts and components with their own terms.

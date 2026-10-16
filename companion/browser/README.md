@@ -19,6 +19,13 @@ Chat/text, media generation, read-only data, search/extraction, form submission/
 
 The generic consumer app is /workflow-data.html; the chat consumer is /workflow-chat.html. Keys/history remain in page memory and only verified completed results are displayed. Website changes can require reselecting controls/outputs; existing action IDs are retained by explicit draft repair where supported.
 
+For a ChatGPT layout problem, open the companion on the conversation tab and
+choose **Inspect chat layout → Inspect chat layout**, then **Copy diagnostics**.
+This explicit read-only check does not send a message, pair a tab or change its
+connection. The report includes bounded message structure and selected website
+text; review it before sharing. It excludes cookies, storage, account-sidebar
+values and form values.
+
 ## Permission boundaries
 
 The extension uses activeTab, scripting, alarms and extension-owned storage, plus tabCapture and offscreen for separately authorized visual preview. Loopback Hermo is its only permanent host permission and network destination. Active grants are restricted to trusted extension contexts in chrome.storage.session; tokens never enter page DOM or persistent chrome.storage.local. Chrome clears session storage when the browser session ends. No cookies/passwords, website storage, history, all-websites access, debugger, fingerprint modification or remote script is used. Each command checks exact tab ID, origin and scoped path; local access is restricted to the owned sandbox. Credential/challenge pages cannot supply successful run results.

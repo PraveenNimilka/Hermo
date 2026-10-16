@@ -97,6 +97,10 @@ text choices and bounds. The editor shows where inputs are used. Send JSON
 numbers and booleans as those types, not strings. Keep secrets out of defaults:
 defaults are included in contracts and exports.
 
+Omitting an optional text input without a default clears its recorded field.
+Optional select and checkbox inputs need a valid default, so replay never reuses
+an earlier request's selection accidentally.
+
 Outputs support strings, numbers, booleans, URLs, nested objects and lists.
 Use relative selectors inside a repeated row or container. Configure optional
 or nullable fields deliberately. A missing optional value may be omitted; an
@@ -109,6 +113,11 @@ Choose **Save draft**, select the **Authorized execution connection**, enter
 test inputs, and run the test. Inspect the step statuses, timings, extracted
 output and verification evidence. Repair missing outputs before publishing.
 Changing the draft or execution target requires a new verified test.
+
+Compatible chat drafts also offer **Repair this chat recording** in the test
+dialog. Review its authorization before replacing the recording with Fill and
+Send steps and latest-message outputs. Repair clears verification; test a fresh,
+completed reply before publishing.
 
 ## 5. Publish and call the API
 
@@ -195,6 +204,12 @@ Hermo returns validated media links, not a new media-hosting service. Protected,
 expired, `blob:` or canvas-only assets may not be portable to another app.
 The API does not copy Chrome cookies to make those links accessible. Unsupported
 or missing media fails verification; inspect and repair its output selection.
+
+For an opaque asset URL, set **Output mappings → Media preview** to Image,
+Video, Audio or Download link, then save, verify and publish. In the API
+playground or `/workflow-data.html`, **Load preview** displays the verified
+asset without running the workflow again or forwarding your Hermo key to its
+host. Video and audio players do not autoplay.
 
 To see the website's actual appearance inside Hermo, open the companion on the
 paired website tab and choose **Enable live preview**, then return to Hermo's
