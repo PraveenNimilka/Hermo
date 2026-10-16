@@ -18,3 +18,25 @@ work/
 # Local coding-agent tools and downloaded design guidance
 .agents/
 .codex/
+
+# Regenerated acceptance output; reviewed snapshots live in docs/validation.
+/validation/
+/PUBLIC-INTEGRATION-VALIDATION.json
+/DESIGN-VALIDATION.json
+/PUBLIC-BROWSER-CHECK.json
+/GOOGLE-PRIVATE-BROWSER-CHECK.json
+
+# Local diagnostics, credentials and editor/OS caches
+coverage/
+playwright-report/
+*.har
+*.p12
+*.pfx
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+__pycache__/
+*.pyc
