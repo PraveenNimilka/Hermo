@@ -1,15 +1,16 @@
 import {inputJsonSchema,outputJsonSchema} from './workflow-contract.mjs';
+import {workflowEffect} from './execution-capabilities.mjs';
 
 // Schema generation shares the runtime contract; it does not infer website data.
 export function workflowSpec(workflow,origin) {
-  const definition=workflow.definition;
+  const definition=workflow.definition,effect=workflowEffect(definition,workflow.connection_config?.browser_mode);
   const json=schema=>({'application/json':{schema}});
   const input=inputJsonSchema(definition.inputs),output=outputJsonSchema(definition.outputs);
   return {
     openapi:'3.1.1',
     'x-hermo-revision':workflow.revision??null,
     'x-hermo-workflow-version':workflow.version,
-    info:{title:`Hermo · ${workflow.name}`,version:'1.0.0',description:(definition.effect==='recorded_browser_actions'?'Replay approved actions in a selected normal Chrome tab. Actions may submit forms or change website data. Keep Hermo unlocked and its connected website tab open. ':'Verified retrieval action. ')+'No-match and insufficient evidence fail explicitly. Async execution; poll the returned run ID.'},
+    info:{title:`Hermo · ${workflow.name}`,version:'1.0.0',description:(effect==='recorded_browser_actions'?'Replay approved actions in a selected normal Chrome tab. Actions may submit forms or change website data. Keep Hermo unlocked and its connected website tab open. ':'Verified retrieval action. ')+'No-match and insufficient evidence fail explicitly. Async execution; poll the returned run ID.'},
     servers:[{url:origin}],security:[{HermoKey:[]}],
     paths:{
       [`/v1/actions/${workflow.slug}/versions/1/runs`]:{post:{

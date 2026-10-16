@@ -3,16 +3,17 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { z } from 'zod';
 import {inputJsonSchema,outputJsonSchema} from './workflow-contract.mjs';
 import {workflowInputSchema} from './workflow-input.mjs';
+import {workflowEffect} from './execution-capabilities.mjs';
 export function installMcp(app,{origin,aliases,workflow,enqueue,db,safeRun,cancel,fail,rate}) {
   app.post('/mcp',async(req,reply)=>{
-    const consumer=req.consumer,w=workflow(consumer.workflow_id);
+    const consumer=req.consumer,w=workflow(consumer.workflow_id),effect=workflowEffect(w.definition,w.connection_config?.browser_mode);
     // A fresh server and transport per request prevents cross-consumer context reuse.
     const server=new McpServer({name:'hermo',version:'0.1.0'});
     const result=value=>({content:[{type:'text',text:JSON.stringify(value)}],structuredContent:value});
     server.registerTool('action_'+w.slug.replaceAll('.','_').replaceAll('-','_'),{
-      title:w.name,description:(w.definition.effect==='recorded_browser_actions'?'Replay approved actions in the selected Chrome tab. Actions may submit forms or change website data. ':'Start this verified retrieval action. ')+'Returns a run ID. Poll get_run until terminal. Preserve request_id when retrying admission.',
+      title:w.name,description:(effect==='recorded_browser_actions'?'Replay approved actions in the selected Chrome tab. Actions may submit forms or change website data. ':'Start this verified retrieval action. ')+'Returns a run ID. Poll get_run until terminal. Preserve request_id when retrying admission.',
       inputSchema:{input:workflowInputSchema(w.definition.inputs),request_id:z.string().min(1).max(200)},
-      annotations:{readOnlyHint:w.definition.effect!=='recorded_browser_actions',destructiveHint:w.definition.effect==='recorded_browser_actions',idempotentHint:w.definition.effect!=='recorded_browser_actions',openWorldHint:true}
+      annotations:{readOnlyHint:effect!=='recorded_browser_actions',destructiveHint:effect==='recorded_browser_actions',idempotentHint:effect!=='recorded_browser_actions',openWorldHint:true}
     },async({input,request_id})=>{
       rate('key:admit:'+consumer.id,60);const fresh=workflow(w.id);if(fresh.status!=='published')fail('ACTION_PAUSED','This action is not currently published.',409);
       return result(enqueue(fresh,input,consumer.id,request_id));

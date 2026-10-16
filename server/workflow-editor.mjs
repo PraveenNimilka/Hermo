@@ -3,7 +3,7 @@ import {hash} from './store.mjs';
 import {inputFieldSchema,outputMappingSchema,validateOutputMappings,validateWorkflowContract} from './workflow-contract.mjs';
 import {validateWorkflowSteps} from './workflow-steps.mjs';
 import {verifierSchema,validateVerifiers} from './verification.mjs';
-import {workflowExecutionCompatibility,executionCapabilities} from './execution-capabilities.mjs';
+import {workflowExecutionCompatibility,executionCapabilities,workflowEffect} from './execution-capabilities.mjs';
 
 const name=z.string().regex(/^[a-z][a-z0-9_]{1,39}$/);
 // Owner-only editing, inherited session/CSRF checks. Published revisions are
@@ -28,6 +28,7 @@ export function installWorkflowEditor(app,{store,workflow,connection,executionCo
       if(!validateVerifiers(body.verifiers,body.outputs,body.inputs))throw Error('INVALID_VERIFIER');
       const {version:old,...previous}=w.definition;
       definition=validateWorkflowContract({...previous,...body.effect?{effect:body.effect}:{},contract_version:'2',steps,inputs:body.inputs,outputs:body.outputs,verifiers:body.verifiers,timeout_ms:body.timeout_seconds*1000});
+      definition.effect=workflowEffect(definition,c.browser_mode);
       const compatibility=workflowExecutionCompatibility(c,definition,undefined,{sandboxOrigin:origin});
       if(!compatibility.compatible)fail('EXECUTION_INCOMPATIBLE',compatibility.errors[0]?.message??'This browser mode cannot execute the configured workflow.',409);
       definition.version=hash(JSON.stringify(definition));

@@ -36,7 +36,9 @@ test('default companion survives forced worker restart and stops delayed actions
       const popup=await readyPopup();
       await evaluate(popup.targetId,`document.querySelector('#workspace').value=${JSON.stringify(origin)};document.querySelector('#code').value=${JSON.stringify(grant.code)};document.querySelector('#authorize').checked=true;document.querySelector('#pair').requestSubmit();true`);
       for(let n=0;n<100;n++){if((await link()).linked)break;await new Promise(done=>setTimeout(done,100));}
-      assert.equal((await link()).linked,true,await evaluate(popup.targetId,"document.querySelector('#status').textContent"));
+      // Successful pairing can dismiss the popup; only read it to diagnose failure.
+      const paired=(await link()).linked;
+      assert.equal(paired,true,paired?undefined:await evaluate(popup.targetId,"document.querySelector('#status').textContent"));
       const targets=(await cdp.send('Target.getTargets')).targetInfos;assert.equal(targets.some(t=>t.url.includes('/controller.html')||t.url.includes('/connect.html')),false);
       await cdp.send('Target.closeTarget',{targetId:popup.targetId});await site.locator('#hermo-connection-panel').waitFor();
     };

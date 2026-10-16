@@ -5,11 +5,68 @@ import {generateKeyPair,SignJWT} from 'jose';
 import {resolve} from 'node:path';
 import {existsSync} from 'node:fs';
 import http from 'node:http';
+import Fastify from 'fastify';
+import cookies from '@fastify/cookie';
 import {chromium} from 'playwright';
-import {createGoogleProvider} from '../server/google.mjs';
+import {createGoogleProvider,installGoogle} from '../server/google.mjs';
 import {createApp} from '../server/index.mjs';
+import {hash} from '../server/store.mjs';
 
 const clientId='hermo-test.apps.googleusercontent.com';
+test('in-flight Google callbacks cannot restore authorization after logout, unlink or reconfiguration',async t=>{
+  for(const operation of ['logout','unlink','configure'])await t.test(operation,async()=>{
+    process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');
+    let exchangeStarted,finishExchange;
+    const started=new Promise(resolve=>exchangeStarted=resolve),gate=new Promise(resolve=>finishExchange=resolve);
+    const identity={sub:'synthetic-race-subject',email:'synthetic@example.test',name:'Synthetic Owner'};
+    const provider={configured:true,authorization:flow=>'https://accounts.google.com/o/oauth2/v2/auth?state='+flow.state,async exchange(){exchangeStarted();await gate;return identity;}};
+    const port=4389,password='synthetic-oauth-lifecycle-password';
+    const {app,store}=await createApp({port,dataDir:resolve('work/google-lifecycle-tests',randomBytes(6).toString('hex')),googleProvider:provider});
+    let cookie='',csrf='';
+    const take=response=>{for(const value of [response.headers['set-cookie']??[]].flat()){const name=value.split('=')[0];cookie=cookie.split('; ').filter(part=>part&&!part.startsWith(name+'=')).concat(value.split(';')[0]).join('; ');}};
+    const call=(url,body)=>app.inject({method:body===undefined?'GET':'POST',url,headers:{host:'127.0.0.1:'+port,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf}},...body===undefined?{}:{payload:body}});
+    try{
+      let response=await call('/studio/session');take(response);csrf=response.json().csrf;
+      response=await call('/studio/setup',{password});assert.equal(response.statusCode,200);take(response);csrf=response.json().csrf;
+      store.setSetting('google_owner',store.seal(identity));
+      response=await call('/studio/google/start',{purpose:'link',password});assert.equal(response.statusCode,200);take(response);
+      const state=new URL(response.json().authorization_url).searchParams.get('state');
+      const callback=call('/oauth/google/callback?state='+state+'&code=synthetic-code');await started;
+      const mutation=operation==='logout'?['/studio/logout',{}]:operation==='unlink'?['/studio/google/unlink',{password}]:['/studio/google/configure',{clientId,clientSecret:'synthetic-reconfigured-secret',password}];
+      assert.equal((await call(...mutation)).statusCode,200);
+      finishExchange();response=await callback;
+      assert.equal(response.statusCode,400,response.body);assert.equal(response.json().error.code,'GOOGLE_STATE_REJECTED');
+      assert.equal([response.headers['set-cookie']??[]].flat().some(value=>value.startsWith(`hermo_owner_${port}=`)),false);
+      if(operation==='logout')assert.equal((await call('/studio/overview')).statusCode,401);
+      if(operation==='unlink')assert.equal(store.getSetting('google_owner'),undefined);
+    }finally{finishExchange();await app.close();}
+  });
+});
+
+test('in-flight Google linking rechecks the original owner session before saving identity',async t=>{
+  for(const change of ['expired','replaced'])await t.test(change,async()=>{
+    const app=Fastify();await app.register(cookies);
+    const ownerCookie='hermo_owner_test',ownerToken='synthetic-owner-session',owner=hash(ownerToken),values=new Map();
+    const sessions=new Map([[owner,{authenticated:true,expires:Date.now()+60000}]]);
+    let exchangeStarted,finishExchange,issued=0;
+    const started=new Promise(resolve=>exchangeStarted=resolve),gate=new Promise(resolve=>finishExchange=resolve);
+    const store={getSetting:key=>values.get(key),setSetting:(key,value)=>values.set(key,value),seal:JSON.stringify,unseal:JSON.parse,audit(){}};
+    const provider={configured:true,authorization:flow=>'https://accounts.google.com/o/oauth2/v2/auth?state='+flow.state,async exchange(){exchangeStarted();await gate;return {sub:'synthetic-sub',email:'synthetic@example.test',name:'Synthetic Owner'};}};
+    installGoogle(app,{origin:'http://127.0.0.1:4389',provider,ownerCookie,store,session:req=>sessions.get(hash(req.cookies[ownerCookie]??'')),newSession:()=>{issued++;return {};},sessions,hash,passwordMatches:async()=>true,fail:(code,message,statusCode=400)=>{throw Object.assign(Error(message),{publicCode:code,statusCode});},rate(){}});
+    store.setSetting('owner_password','synthetic-encoded-password');
+    try{
+      const response=await app.inject({method:'POST',url:'/studio/google/start',headers:{host:'127.0.0.1:4389',cookie:ownerCookie+'='+ownerToken},payload:{purpose:'link',password:'synthetic-password'}});
+      assert.equal(response.statusCode,200,response.body);
+      const state=new URL(response.json().authorization_url).searchParams.get('state'),binding=response.headers['set-cookie'].split(';')[0];
+      const callback=app.inject({url:'/oauth/google/callback?state='+state+'&code=synthetic-code',headers:{host:'127.0.0.1:4389',cookie:ownerCookie+'='+ownerToken+'; '+binding}});
+      await started;
+      if(change==='expired')sessions.get(owner).expires=Date.now()-1;
+      else{sessions.delete(owner);sessions.set(hash('replacement-owner-token'),{authenticated:true,expires:Date.now()+60000});}
+      finishExchange();assert.equal((await callback).statusCode,401);assert.equal(issued,0);assert.equal(store.getSetting('google_owner'),undefined);
+    }finally{finishExchange();await app.close();}
+  });
+});
+
 test('real Chromium follows cross-site OAuth returns, restores owner access and handles cancellation',{timeout:60000},async()=>{
   process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');
   const port=4340,flows=new Map(),password='synthetic-browser-oauth-password';

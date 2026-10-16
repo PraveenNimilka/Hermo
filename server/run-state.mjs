@@ -1,3 +1,5 @@
+import {workflowEffect} from './execution-capabilities.mjs';
+
 // Durable execution observations. Never copy browser text, selectors or field values here.
 export const activeRunStatuses = ['queued', 'running', 'verifying'];
 const stamp = () => new Date().toISOString();
@@ -32,7 +34,7 @@ export function observeProgress(payload, definition, index, total, event = {}, a
     payload.progress = Math.round((index + 1) / Math.max(total, 1) * 100);
   } else if (event.phase === 'issuing') {
     // On-change handlers can submit data for fill/select/check as well as click.
-    if (definition.effect === 'recorded_browser_actions' && step.operation !== 'navigate') {
+    if (definition.steps[index]?.enabled!==false&&workflowEffect(definition,payload.execution_mode)==='recorded_browser_actions'&&['click','fill','select','check'].includes(step.operation)) {
       payload.submission_may_have_occurred = true;
     }
   } else {

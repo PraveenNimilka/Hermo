@@ -5,6 +5,10 @@ import {validateOutputMappings} from './output-mappings.mjs';
 import {pageTemplate} from './page-template.mjs';
 
 export const EXECUTION_MODES=Object.freeze(['connected_chrome','managed_local']);
+export function workflowEffect(definition,mode){
+  if(definition.effect==='recorded_browser_actions')return 'recorded_browser_actions';
+  return ['connected','connected_chrome'].includes(mode)&&definition.steps?.some(step=>step.enabled!==false&&['click','fill','select','check'].includes(step.op))?'recorded_browser_actions':'retrieval';
+}
 const operations=Object.freeze(['navigate','click','fill','select','check','wait_element','wait_url','wait_text']);
 const configSchema=z.object({
   version:z.literal(1),

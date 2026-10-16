@@ -58,6 +58,12 @@ export async function createApp({port=Number(process.env.HERMO_PORT??4317),dataD
   const assertConnectionIdle=cid=>{if(connectionBusy(cid)||engine.isPairing(cid))fail('BROWSER_BUSY','This website is pairing or has an accepted or active run. Finish or cancel it before changing the browser.',409);};
   const rate=(name,max,window=60000)=>{const current=limits.get(name);if(!current||current.until<Date.now()){limits.set(name,{count:1,until:Date.now()+window});return;}if(++current.count>max)throw Object.assign(new Error('Too many requests. Try again shortly.'),{publicCode:'RATE_LIMITED',statusCode:429,retryAfter:Math.max(1,Math.ceil((current.until-Date.now())/1000))});};
   const newSession=(reply,authenticated)=>{
+    for(const [key,value]of sessions)if(value.expires<=Date.now())sessions.delete(key);
+    if(!authenticated){
+      rate('anonymous-session',120);
+      const anonymous=[...sessions].filter(([,value])=>!value.authenticated);
+      for(const [key]of anonymous.slice(0,Math.max(0,anonymous.length-127)))sessions.delete(key);
+    }
     const token=randomBytes(32).toString('base64url'), session={authenticated,csrf:randomBytes(24).toString('base64url'),expires:Date.now()+4*3600000};
     sessions.set(hash(token),session);reply.setCookie(ownerCookie,token,{path:'/studio',httpOnly:true,sameSite:'strict',maxAge:4*3600});return session;
   };
@@ -463,6 +469,7 @@ export async function createApp({port=Number(process.env.HERMO_PORT??4317),dataD
       const currentWorkflow=workflow(row.workflow_id),saved=snapshots.get(row.id),payload=unseal(row.payload);
       const w=saved?{...currentWorkflow,version:saved.version,definition:saved.definition}:currentWorkflow;
       const liveConnection=saved?connection(saved.connection_config.id):executionTargets.source(w),c=saved?executionConnection(liveConnection,saved):liveConnection;
+      payload.execution_mode=c.browser_mode==='connected'?'connected_chrome':'managed_local';
       if(row.consumer_id!=='studio') {const key=db.prepare('SELECT * FROM api_keys WHERE id=? AND revoked_at IS NULL AND expires_at>?').get(row.consumer_id,now());if(!key||w.status!=='published')throw new Error('ACTION_PAUSED');}
       if(c.status!=='connected')throw new Error('AUTH_REQUIRED');
       if(c.browser_mode==='connected'&&!engine.isOpen(c.id))throw Error('BROWSER_DISCONNECTED');
