@@ -497,9 +497,13 @@ export async function createApp({port=Number(process.env.HERMO_PORT??4317),dataD
   app.setNotFoundHandler((req,reply)=>{if(req.method==='GET'&&!/^\/(studio|v1|mcp|sandbox|oauth)(\/|$)/.test(req.url)&&!/^\/chatgpt-(plan\.html|example\.(html|js|css))(\?|$)/.test(req.url)&&existsSync(join(root,'dist','index.html')))return reply.sendFile('index.html');return reply.code(404).send({error:{code:'NOT_FOUND',message:'Route not found.'}});});
   const beginShutdown=()=>{closing=true;clearInterval(worker);clearInterval(cleanup);for(const v of controllers.values())v.controller.abort(Error('INTERRUPTED'));};
   // Fastify drains HTTP requests before onClose. Revoke commands and flush long
-  // polls during preClose so the scheduler cannot dispatch while draining.
-  app.addHook('preClose',async()=>{beginShutdown();await engine.closeAll();});
-  app.addHook('onClose',async()=>{beginShutdown();await engine.closeAll();await proxy.close();while(working)await new Promise(r=>setTimeout(r,20));store.close();});
+  // polls during preClose, then await browser teardown outside its hook timeout.
+  let browserShutdown;
+  app.addHook('preClose',async()=>{beginShutdown();browserShutdown=engine.closeAll();
+    // onClose owns any teardown error; observe it while HTTP requests drain.
+    void browserShutdown.catch(()=>{});
+  });
+  app.addHook('onClose',async()=>{beginShutdown();await (browserShutdown??engine.closeAll());await proxy.close();while(working)await new Promise(r=>setTimeout(r,20));store.close();});
   return {app,store,origin,sandbox,enqueue,workflow,generatedSpec};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
