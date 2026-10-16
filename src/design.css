@@ -96,6 +96,8 @@ summary:focus-visible,.browser-preview:focus-visible{outline:2px solid var(--acc
 .metric p{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.5}
 .overview-grid{grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:24px}.overview-grid.complete{grid-template-columns:minmax(0,1fr)}
 .chart{min-width:0;height:auto;min-height:190px}.chart-legend,.chart-note{color:var(--muted);font-size:12px}.chart-legend>span:first-child{background:var(--accent)}
+/* Keep the previous SVG measurement inside the chart until ResizeObserver catches up. */
+.activity-chart .recharts-responsive-container{overflow:clip}
 .chart-placeholder{height:190px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .chart-data{margin-top:12px}.chart-data summary{width:fit-content;min-height:32px;padding:6px 0;color:var(--muted);font-size:12px;cursor:pointer}.chart-data table{margin-top:12px}
 .getting-started h3{color:var(--ink);margin-top:8px;font-size:20px;letter-spacing:normal}
