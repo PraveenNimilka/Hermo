@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';
 import {DeletionConfirmation,deletionPhrase} from './DeletionConfirmation';
 type Request=(path:string,body?:unknown)=>Promise<any>;
 export type SavedBrowser={id:string;name:string;kind:'current'|'managed';legacy?:boolean;apps:{id:string;name:string}[]};

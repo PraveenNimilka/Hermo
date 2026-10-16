@@ -1,7 +1,7 @@
 import {spawn} from 'node:child_process';
 import {existsSync} from 'node:fs';
 import {mkdir} from 'node:fs/promises';
-import {join,resolve} from 'node:path';
+import {resolve} from 'node:path';
 
 export function normalChromeArguments(dataDir,options={}){if(options.workspace_id&&!/^browser_[a-f0-9]{24}$/.test(options.workspace_id))throw Error('INVALID_BROWSER');return ['--user-data-dir='+resolve(dataDir,options.workspace_id&&!options.legacy?'browser-workspaces/'+options.workspace_id:'normal-chrome'),'--no-first-run','--no-default-browser-check','--new-window',options.url??'https://accounts.google.com/'];}
 export function createNormalChromeLauncher(dataDir){return async(options={})=>{

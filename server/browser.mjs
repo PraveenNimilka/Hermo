@@ -4,7 +4,7 @@ import {browserInputValue,convertOutputs} from './workflow-contract.mjs';
 import { chromium } from 'playwright';
 import { id } from './store.mjs';
 import { validateWebsite } from './network.mjs';
-import { inspectDocument } from './dom.mjs';
+import { inspectDocument } from '../companion/browser/inspect.mjs';
 import { existsSync } from 'node:fs';
 import {pageTemplate,pageParameter} from './page-template.mjs';
 

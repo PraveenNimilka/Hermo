@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import {useState} from 'react';
 import {ExternalLink,Copy,Globe2,Loader2} from 'lucide-react';
 type Request=(path:string,body?:unknown)=>Promise<any>;
 type ImportGrant={code:string;expires_at:string;extension_directory:string;guide_url:string;workspace_origin:string};
