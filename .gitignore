@@ -19,7 +19,7 @@ work/
 .agents/
 .codex/
 
-# Regenerated acceptance output; reviewed snapshots live in docs/validation.
+# Generated acceptance output
 /validation/
 /PUBLIC-INTEGRATION-VALIDATION.json
 /DESIGN-VALIDATION.json
