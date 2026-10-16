@@ -1,6 +1,6 @@
 # Human browser handling and the reported failures
 
-Historical research and implementation check, 13 October 2026. This records the isolated-browser investigation at that milestone. The selected-tab companion has since shipped; current setup and limits are in [README.md](README.md) and [SECURITY.md](SECURITY.md).
+Historical research and implementation check, 13 October 2026. This records the isolated-browser investigation at that milestone. The selected-tab companion has since shipped; current setup and limits are in [README.md](../../README.md) and [SECURITY.md](../../SECURITY.md).
 
 ## What the screenshots show
 
@@ -48,6 +48,6 @@ The fresh anonymous check in `PUBLIC-BROWSER-CHECK.json` reached Google’s Emai
 
 Desktop handoff now waits for active preview captures before transferring the context, retains the original preview if creating the desktop context fails, and reopens a closed private browser from its saved, confirmed state. Concurrent screenshot requests share one capture. Diagnostics retain the page’s specific resource type instead of replacing it with the proxy’s generic connection label. The close/reopen and concurrent-capture cases are covered by browser regression tests.
 
-Selecting Google as a search engine affects search navigation. Google workspace OAuth now authenticates Hermo using a registered client and redirect configuration; it does not establish a login session with another provider. The separately implemented private Google browser feature saves and explicitly reuses an encrypted, personally authenticated Google website session. It does not import the regular browser profile or change provider verification policy. See [GOOGLE-BROWSER.md](GOOGLE-BROWSER.md).
+Selecting Google as a search engine affects search navigation. Google workspace OAuth now authenticates Hermo using a registered client and redirect configuration; it does not establish a login session with another provider. The separately implemented private Google browser feature saves and explicitly reuses an encrypted, personally authenticated Google website session. It does not import the regular browser profile or change provider verification policy. See [GOOGLE-BROWSER.md](../google-browser.md).
 
 The integration lab supplies three owned websites with separate accounts and live generated API consumers. It is reproducible without sending personal credentials to external providers. The council diagnostic attempted in this environment did not complete, so these changes have no completed council consensus or independent security audit.

@@ -40,7 +40,7 @@
     },
     "external_workflows": {
       "passed": true,
-      "evidence": "validation/results/real-world-2026-10-16T05-05-32-794Z.json"
+      "evidence": "docs/validation/2026-10-16/results/real-world-2026-10-16T05-05-32-794Z.json"
     },
     "consumer_interfaces": {
       "passed": 6,
@@ -56,11 +56,11 @@
         }
       ],
       "mcp_concurrent_calls": 2,
-      "evidence": "validation/results/consumer-ui-2026-10-16T05-07-44-358Z.json"
+      "evidence": "docs/validation/2026-10-16/results/consumer-ui-2026-10-16T05-07-44-358Z.json"
     },
     "external_companion": {
       "passed": true,
-      "evidence": "validation/results/connected-public-2026-10-16T05-10-10-171Z.json"
+      "evidence": "docs/validation/2026-10-16/results/connected-public-2026-10-16T05-10-10-171Z.json"
     },
     "owner_preservation": {
       "passed": true,

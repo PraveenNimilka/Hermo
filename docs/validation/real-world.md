@@ -3,7 +3,7 @@
 Hermo remains **early access**. This report separates actual external website
 execution from controlled regression fixtures and lists what has not been proven.
 The final machine-readable verification index is
-[`validation/results/release-summary.json`](validation/results/release-summary.json).
+[`2026-10-16/results/release-summary.json`](2026-10-16/results/release-summary.json).
 
 Final local release gates passed: **246/246** core regression tests (no failures,
 cancellations or skips; 710.4 seconds), **22/22** independent consumer tests,
@@ -13,7 +13,7 @@ Configured GitHub CI is a separate check and is not claimed as executed locally.
 
 ## Scope and architecture
 
-The six applications in [`validation-apps/`](validation-apps/README.md) are real,
+The six applications in [`validation-apps/`](../../validation-apps/README.md) are real,
 independent consumers of published, scoped REST or MCP interfaces. Their small
 loopback hosts forward only approved public API routes to one configured local
 Hermo runtime. They have no owner credentials, database access, server imports or
@@ -46,12 +46,12 @@ website's currency text; Hermo does not invent a numeric conversion.
 
 | Application | Executed acceptance | Evidence |
 | --- | --- | --- |
-| Product Search Explorer | Published catalog API, actual products, title filtering, structured response | [Desktop](validation/evidence/product-search-desktop.png), [mobile](validation/evidence/product-search-mobile.png) |
-| Website Change Detector | Two independently verified observations; unchanged classification; local history excludes keys | [Desktop](validation/evidence/change-detector-desktop.png), [mobile](validation/evidence/change-detector-mobile.png) |
-| Website-to-JSON Explorer | Nested quote/tag extraction, record inspection and JSON export interface | [Desktop](validation/evidence/json-explorer-desktop.png), [mobile](validation/evidence/json-explorer-mobile.png) |
-| Hermo MCP Tools | Real initialize/discovery, scoped schemas, workflow calls and `get_run` polling through `/mcp` | [Desktop](validation/evidence/mcp-tools-desktop.png), [mobile](validation/evidence/mcp-tools-mobile.png) |
-| Website Records Dashboard | Published page input, actual paginated records, run revision and verified result | [Desktop](validation/evidence/website-dashboard-desktop.png), [mobile](validation/evidence/website-dashboard-mobile.png) |
-| Hermo Reliability Lab | Bounded two-request execution, queue and execution timing, verified statuses and export interface | [Desktop](validation/evidence/reliability-lab-desktop.png), [mobile](validation/evidence/reliability-lab-mobile.png) |
+| Product Search Explorer | Published catalog API, actual products, title filtering, structured response | [Desktop](2026-10-16/evidence/product-search-desktop.png), [mobile](2026-10-16/evidence/product-search-mobile.png) |
+| Website Change Detector | Two independently verified observations; unchanged classification; local history excludes keys | [Desktop](2026-10-16/evidence/change-detector-desktop.png), [mobile](2026-10-16/evidence/change-detector-mobile.png) |
+| Website-to-JSON Explorer | Nested quote/tag extraction, record inspection and JSON export interface | [Desktop](2026-10-16/evidence/json-explorer-desktop.png), [mobile](2026-10-16/evidence/json-explorer-mobile.png) |
+| Hermo MCP Tools | Real initialize/discovery, scoped schemas, workflow calls and `get_run` polling through `/mcp` | [Desktop](2026-10-16/evidence/mcp-tools-desktop.png), [mobile](2026-10-16/evidence/mcp-tools-mobile.png) |
+| Website Records Dashboard | Published page input, actual paginated records, run revision and verified result | [Desktop](2026-10-16/evidence/website-dashboard-desktop.png), [mobile](2026-10-16/evidence/website-dashboard-mobile.png) |
+| Hermo Reliability Lab | Bounded two-request execution, queue and execution timing, verified statuses and export interface | [Desktop](2026-10-16/evidence/reliability-lab-desktop.png), [mobile](2026-10-16/evidence/reliability-lab-mobile.png) |
 
 Browser acceptance uses 1440×1000 and 375×812 viewports, checks horizontal
 overflow and uncaught page errors, and captures successful states only after
@@ -80,8 +80,8 @@ and price pass owner verification, published REST execution for a different book
 and MCP discovery/invocation/polling for the original book. Closing the authorized
 tab then rejects new work with `409 CONNECTION_STOPPED` and no stale result;
 the runtime stays healthy. See
-[sanitized connected evidence](validation/results/connected-public-2026-10-16T05-10-10-171Z.json)
-and the [actual target tab](validation/evidence/connected-public-book-2026-10-16T05-10-10-171Z.png).
+[sanitized connected evidence](2026-10-16/results/connected-public-2026-10-16T05-10-10-171Z.json)
+and the [actual target tab](2026-10-16/evidence/connected-public-book-2026-10-16T05-10-10-171Z.png).
 This public acceptance does not claim external account or worker-restart coverage;
 worker restart has separate controlled regressions.
 
@@ -90,7 +90,7 @@ output, timeout, actual Chromium process termination and fresh-request recovery.
 The crash test terminates only the disposable browser PID obtained from its own
 CDP connection. It verifies that the failed run is not replayed and recovering
 its receipt cannot start a new execution. Local fixtures are never presented as
-external website acceptance. See [bug fixes](REAL-WORLD-BUGFIXES.md).
+external website acceptance. See [bug fixes](bugfixes.md).
 
 ## Reproduce
 

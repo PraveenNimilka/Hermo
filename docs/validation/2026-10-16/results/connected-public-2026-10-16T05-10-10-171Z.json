@@ -108,7 +108,7 @@
   "limitations": [
     "Public read-only website only; authenticated sites, CAPTCHA, model generation, and service-worker restart not exercised by this script."
   ],
-  "screenshot": "validation/evidence/connected-public-book-2026-10-16T05-10-10-171Z.png",
+  "screenshot": "docs/validation/2026-10-16/evidence/connected-public-book-2026-10-16T05-10-10-171Z.png",
   "completed_at": "2026-10-16T05:10:26.922Z",
   "passed": true,
   "cleanup": {

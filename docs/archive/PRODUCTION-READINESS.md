@@ -5,8 +5,8 @@ Audit date: 15 October 2026. This document distinguishes implemented behavior fr
 ## Latest implementation status
 
 For the 16 October consumer-app acceptance and companion refresh, see
-[REAL-WORLD-VALIDATION.md](REAL-WORLD-VALIDATION.md) and
-[REAL-WORLD-BUGFIXES.md](REAL-WORLD-BUGFIXES.md). The counts below describe the
+[REAL-WORLD-VALIDATION.md](../validation/real-world.md) and
+[REAL-WORLD-BUGFIXES.md](../validation/bugfixes.md). The counts below describe the
 earlier milestone, not the current release gate.
 
 The next-release milestone now implements immutable publications and isolated

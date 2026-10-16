@@ -21,7 +21,7 @@ identified by that test's own CDP session. The failed run returns no result;
 retrieving its original idempotent receipt does not relaunch; a separately
 admitted fresh request can start a replacement browser. The focused managed-fault,
 run-state and startup checks passed **13/13**, with no skipped tests. Final full
-suite results are in `validation/results/release-summary.json`.
+suite results are in `2026-10-16/results/release-summary.json`.
 
 ## Consumer mobile overflow
 
@@ -48,7 +48,7 @@ No extra host permission or transport protocol change was needed for this redesi
 Real Chrome companion checks cover popup layout, keyboard/focus behavior, panel
 disclosure, branded assets and important connected/error states. Existing transport,
 diagnostic and live preview checks remain in the regression suite.
-See the [actual native companion popup](validation/evidence/companion-popup.png).
+See the [actual native companion popup](2026-10-16/evidence/companion-popup.png).
 
 ## Validation harness corrections
 
@@ -71,4 +71,4 @@ remain intact. Six consumer apps use only public interfaces. User workspace data
 keys, browser profiles and environment files are excluded from the release.
 
 Remaining limitations, external blockers and reproducible acceptance commands are
-documented in [REAL-WORLD-VALIDATION.md](REAL-WORLD-VALIDATION.md).
+documented in [REAL-WORLD-VALIDATION.md](real-world.md).

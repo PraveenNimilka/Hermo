@@ -8,7 +8,7 @@ The browser canvas owns its operation status. Initial startup uses one labeled i
 
 Analytics loads on demand: the main JavaScript chunk is about 483 KB instead of 846 KB, and the 362 KB chart chunk is fetched only for Overview. The final production build has no large-chunk warning. This is a bundle-size change, not a measured page-load benchmark.
 
-Validation: production build and the ten browser/API end-to-end tests passed. A personal-credential-free UI walkthrough connected the sandbox, recorded an input and two outputs, verified the result, published an API, and opened its documentation. The one-time key was not read or captured. Dashboard/docs were inspected at a 390px viewport without horizontal page overflow. A delayed-start fixture confirmed exactly one browser spinner and no second busy overlay. See `DESIGN-VALIDATION.json` for scope and limits.
+Validation: production build and the ten browser/API end-to-end tests passed. A personal-credential-free UI walkthrough connected the sandbox, recorded an input and two outputs, verified the result, published an API, and opened its documentation. The one-time key was not read or captured. Dashboard/docs were inspected at a 390px viewport without horizontal page overflow. A delayed-start fixture confirmed exactly one browser spinner and no second busy overlay. See `../archive/DESIGN-VALIDATION.json` for scope and limits.
 
 Logo: built-in image generation, transparent PNG, saved as `public/brand/hermo-crab.png`. Used in the sidebar, unlock screen, and favicon. Original generation is preserved in the Codex generated-images directory.
 

@@ -57,7 +57,7 @@ or changed for testing. Refresh and unlock to see the rebuilt interface.
 - Grid children no longer add panel margins on top of grid gaps. Form guidance, saved-browser controls, section headers, contract columns and dialog spacing use shared spacing rules.
 - Phone top bars reserve room for the breadcrumb and controls; the redundant local badge is hidden on narrow screens instead of overflowing the document.
 - Consumer apps, companion popup/panel and Hermo's own setup/guide pages use the same neutral treatment. No backend, authentication, saved-data, API, recording or browser-permission behavior changed.
-- The preference is recorded in `design-system/hermo/MASTER.md` for future work.
+- The preference is recorded in `../design/interface.md` for future work.
 
 ## Verified
 

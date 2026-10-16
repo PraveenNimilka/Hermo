@@ -20,9 +20,9 @@ were checked unchanged. Production build passed.
 The final full regression passed **246/246**, with zero failures, cancellations
 or skips (710.4 seconds); independent consumer tests passed **22/22**.
 
-See [REAL-WORLD-VALIDATION.md](REAL-WORLD-VALIDATION.md),
-[REAL-WORLD-BUGFIXES.md](REAL-WORLD-BUGFIXES.md) and the
-[machine-readable release index](validation/results/release-summary.json) for
+See [REAL-WORLD-VALIDATION.md](real-world.md),
+[REAL-WORLD-BUGFIXES.md](bugfixes.md) and the
+[machine-readable release index](2026-10-16/results/release-summary.json) for
 final checks, timestamps, screenshots and genuine external limitations. Private
 provider generation and a real model conversation are not certified. The reports
 below retain their historical scope; they are not later release test counts.
@@ -42,7 +42,7 @@ Reload the unpacked extension, refresh/unlock Hermo and reconnect before use.
 
 Runtime activation and preservation checks passed on an existing local workspace. Connection, workflow, key, run and saved-browser identities were preserved.
 Details, verification evidence and limits:
-[LIVE-PREVIEW-VALIDATION.md](LIVE-PREVIEW-VALIDATION.md).
+[LIVE-PREVIEW-VALIDATION.md](../archive/LIVE-PREVIEW-VALIDATION.md).
 Production build and final affected tests **26/26** passed. The broad regression
 had 238 passes and one obsolete automatic-screenshot expectation; the corrected
 test passes in the final focused run. See the linked report for exact scope.
@@ -71,7 +71,7 @@ execution-panel gaps, grid actions and API-key button baselines are consistent.
   provider account certification or universal compatibility is claimed.
 
 Detailed implementation, limits, exact commands, screenshots and activation:
-[MEDIA-PREVIEW-VALIDATION.md](MEDIA-PREVIEW-VALIDATION.md). Earlier sections below
+[MEDIA-PREVIEW-VALIDATION.md](../archive/MEDIA-PREVIEW-VALIDATION.md). Earlier sections below
 are historical. Product status remains **early access**.
 
 ## Revisions, editor and independent execution — historical milestone
@@ -96,7 +96,7 @@ The existing React/Fastify/SQLite architecture and connected Chrome path remain.
 - Companion 0.6.0 introduced the required waits and structured extraction. Current installation uses 0.7.0.
 
 Detailed implementation, migration, exact checks and remaining release work:
-[NEXT-RELEASE-VALIDATION.md](NEXT-RELEASE-VALIDATION.md). Product status remains
+[NEXT-RELEASE-VALIDATION.md](../archive/NEXT-RELEASE-VALIDATION.md). Product status remains
 **early access**. Managed local execution permits supported retrievals only;
 submissions/generation require Connected Chrome. Historical validation sections
 below describe their own milestones and do not supersede this result.
@@ -107,21 +107,21 @@ Milestone 2 adds strict scalar inputs, enums, optional/default behavior, bounds 
 
 - Complete regression: **170 passed, 0 failed, 0 cancelled, 0 skipped**, 545.4 seconds (`work/typed-contract-full-tests.log`).
 - TypeScript/production build passed; both final desktop/tablet/phone contract and runtime UI checks passed (`work/typed-contract-final-ui.log`). Reduced-motion contract geometry also passed (`work/typed-contract-final-contract.log`). Production entry: `index-C5-7vYCV.js`.
-- Live generated APIs for Books to Scrape and Quotes to Scrape passed again (`work/typed-contract-public-tests.log`, current `PUBLIC-INTEGRATION-VALIDATION.json`).
+- Live generated APIs for Books to Scrape and Quotes to Scrape passed again (`work/typed-contract-public-tests.log`, current `../archive/PUBLIC-INTEGRATION-VALIDATION.json`).
 - Runtime restart preserved encrypted data; health/dashboard/guide/apps passed and the owner overview remained protected. That milestone used companion 0.5.0.
 
-Detailed implementation and checks for that earlier milestone: [SCALAR-CONTRACT-VALIDATION.md](SCALAR-CONTRACT-VALIDATION.md). Audit, architecture and roadmap: [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md). Revisions, the step editor, projects and nested/list/optional outputs were subsequently implemented in the latest milestone above.
+Detailed implementation and checks for that earlier milestone: [SCALAR-CONTRACT-VALIDATION.md](../archive/SCALAR-CONTRACT-VALIDATION.md). Audit, architecture and roadmap: [PRODUCTION-READINESS.md](../archive/PRODUCTION-READINESS.md). Revisions, the step editor, projects and nested/list/optional outputs were subsequently implemented in the latest milestone above.
 
 ## Core reliability — historical milestone, 15 October 2026
 
-The complete audit, architecture, gaps, security checklist, UI plan and prioritized roadmap are in [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md). Milestone 1 adds exclusive runtime ownership, provenance-preserving interrupted-run recovery, recording/pairing/execution guards, safe cancellation and shutdown, actual MV3 worker recovery, mandatory command guards, durable step evidence and truthful monochrome runtime/run UI. Existing workspace data and routes are preserved.
+The complete audit, architecture, gaps, security checklist, UI plan and prioritized roadmap are in [PRODUCTION-READINESS.md](../archive/PRODUCTION-READINESS.md). Milestone 1 adds exclusive runtime ownership, provenance-preserving interrupted-run recovery, recording/pairing/execution guards, safe cancellation and shutdown, actual MV3 worker recovery, mandatory command guards, durable step evidence and truthful monochrome runtime/run UI. Existing workspace data and routes are preserved.
 
 - Final complete regression: **154 passed, 0 failed, 0 cancelled, 0 skipped**, 521.8 seconds (`work/production-core-final-tests.log`).
 - TypeScript/Vite build passed. Actual Chrome worker restart, Stop readiness, dashboard-closed REST, record/test/publish/REST/MCP, security boundaries and desktop/tablet/phone UI checks passed.
-- Books to Scrape and Quotes to Scrape live generated APIs passed again; `PUBLIC-INTEGRATION-VALIDATION.json` contains current timestamped results. No private vendor account certification is claimed.
+- Books to Scrape and Quotes to Scrape live generated APIs passed again; `../archive/PUBLIC-INTEGRATION-VALIDATION.json` contains current timestamped results. No private vendor account certification is claimed.
 - Runtime activation and health/dashboard/guide HTTP checks passed at that milestone, which used companion 0.5.0.
 
-Detailed evidence, the corrected initial mock failure and remaining release gates: [CORE-RELIABILITY-VALIDATION.md](CORE-RELIABILITY-VALIDATION.md). Earlier sections below are historical; they do not supersede this milestone's version or limits.
+Detailed evidence, the corrected initial mock failure and remaining release gates: [CORE-RELIABILITY-VALIDATION.md](../archive/CORE-RELIABILITY-VALIDATION.md). Earlier sections below are historical; they do not supersede this milestone's version or limits.
 
 ## Immediate selected-tab connection — historical milestone, 15 October 2026
 
@@ -135,13 +135,13 @@ The built UI completes pairing automatically, retries transient preview/completi
 - TypeScript/Vite production build and final source/whitespace checks pass. Independent read-only review found no remaining blocker after recovery fixes.
 - Runtime restart preserved existing setup, workflows, keys and runs; home, chat and connection-guide checks passed. That milestone used companion 0.4.1 and removed selected-tab account selection.
 
-The first full attempt passed 122 checks but exposed a new fixture setup error: the popup was invoked while the owner UI tab was active. Focusing the intended website corrected the test without relaxing any permission check; the final complete rerun is green. These are owned/disposable website fixtures, not an authenticated live Gemini certification. See [TAB-CONNECTION-VALIDATION.md](TAB-CONNECTION-VALIDATION.md).
+The first full attempt passed 122 checks but exposed a new fixture setup error: the popup was invoked while the owner UI tab was active. Focusing the intended website corrected the test without relaxing any permission check; the final complete rerun is green. These are owned/disposable website fixtures, not an authenticated live Gemini certification. See [TAB-CONNECTION-VALIDATION.md](../archive/TAB-CONNECTION-VALIDATION.md).
 
 ## Monochrome alignment — historical milestone, 14 October 2026
 
 The selected design direction uses black and white with neutral grays, replacing the previous blue accent. Action metadata is grouped with a gap; variable-length cards have aligned footers. Shared grid/form/dialog spacing, saved-browser control grouping and narrow top bars were corrected. All six main screens, unlock, consumer apps and companion UI use the neutral treatment while website images keep their colors.
 
-Production build passes; UI suite **7/7**, management **1/1**, companion/Stop checks **2/2** pass. Desktop/tablet/phone/landscape checks and 39 screenshots include actual recording/verification/publication, deletion, keyboard focus, no horizontal overflow and neutral-color assertions. No backend/auth/data contracts changed; saved workspace remains. The milestone’s built dashboard was served successfully. See [UI-ALIGNMENT-VALIDATION.md](UI-ALIGNMENT-VALIDATION.md).
+Production build passes; UI suite **7/7**, management **1/1**, companion/Stop checks **2/2** pass. Desktop/tablet/phone/landscape checks and 39 screenshots include actual recording/verification/publication, deletion, keyboard focus, no horizontal overflow and neutral-color assertions. No backend/auth/data contracts changed; saved workspace remains. The milestone’s built dashboard was served successfully. See [UI-ALIGNMENT-VALIDATION.md](../archive/UI-ALIGNMENT-VALIDATION.md).
 
 
 ## Universal bridge and dashboard — historical milestone, 14 October 2026
@@ -154,18 +154,18 @@ All three requested design skill sources are installed and verified project-loca
 
 Final `npm test`: **130 passed, 0 failed, 0 cancelled, 0 skipped**, 498.5 seconds. Final `npm run build` passes. Actual Books to Scrape and Quotes to Scrape pass; all six owned fixture task families are recorded, verified, published and called over REST, with media additionally exercised over MCP and the generic consumer app. Final production UI tests cover 1440, 768, 375 and 844×390 landscape, with 31 screenshots and actual recording/publication. Runtime activation preserved existing configuration. This milestone used companion 0.4.0.
 
-See [UNIVERSAL-WEBSITE-BRIDGE-VALIDATION.md](UNIVERSAL-WEBSITE-BRIDGE-VALIDATION.md) for installation details, exact evidence and limits. No personal provider accounts or paid media services were used by automated tests. Visible DOM/portable links are supported; website verification and unsupported surfaces may need manual handling.
+See [UNIVERSAL-WEBSITE-BRIDGE-VALIDATION.md](../archive/UNIVERSAL-WEBSITE-BRIDGE-VALIDATION.md) for installation details, exact evidence and limits. No personal provider accounts or paid media services were used by automated tests. Visible DOM/portable links are supported; website verification and unsupported surfaces may need manual handling.
 
 
 ## Workflow refinement — historical milestone, 14 October 2026
 
 Companion **0.3.0** pairs directly from the selected website popup without an extra controller tab. Management screens now use exact named deletion confirmation, action/API-key deletion, bounded history, specific action documentation and less duplicate onboarding. Inspection separates account identity, primary controls, chat messages and data fields; stale account selections are rejected. Cancellation/unwinding and browser-removal races are guarded.
 
-Final `npm test`: **113 passed, 0 failed, 0 cancelled, 0 skipped**, 387.4 seconds. Final `npm run build` passed. Actual Books to Scrape and Quotes to Scrape integrations passed, including separately selected inline date/location data after fixing a refinement regression. Production desktop/mobile screenshots were inspected. Runtime activation preserved existing configuration. This milestone used companion 0.3.0. See [refinement evidence and update instructions](WORKFLOW-REFINEMENT-VALIDATION.md).
+Final `npm test`: **113 passed, 0 failed, 0 cancelled, 0 skipped**, 387.4 seconds. Final `npm run build` passed. Actual Books to Scrape and Quotes to Scrape integrations passed, including separately selected inline date/location data after fixing a refinement regression. Production desktop/mobile screenshots were inspected. Runtime activation preserved existing configuration. This milestone used companion 0.3.0. See [refinement evidence and update instructions](../archive/WORKFLOW-REFINEMENT-VALIDATION.md).
 
 ## Previous saved-browser release - 14 October 2026
 
-Companion **0.2.0** implements saved-browser reuse in Connections, a trusted connection page and fixed website Stop panel, Stop/reconnect without losing action keys, and output-only actions with unit/context checks. Production build and the final **96-test suite passed**. Books to Scrape and Quotes to Scrape live generated APIs passed again. Preservation checks matched workflow contracts and key scopes to a pre-migration backup. See [complete validation and update instructions](WORKFLOW-SIMPLIFICATION-VALIDATION.md). Older entries below describe earlier releases and their observations.
+Companion **0.2.0** implements saved-browser reuse in Connections, a trusted connection page and fixed website Stop panel, Stop/reconnect without losing action keys, and output-only actions with unit/context checks. Production build and the final **96-test suite passed**. Books to Scrape and Quotes to Scrape live generated APIs passed again. Preservation checks matched workflow contracts and key scopes to a pre-migration backup. See [complete validation and update instructions](../archive/WORKFLOW-SIMPLIFICATION-VALIDATION.md). Older entries below describe earlier releases and their observations.
 
 ## Earlier connection and extraction milestones — historical summary
 
@@ -183,7 +183,7 @@ These entries summarize earlier development evidence. They do not certify curren
 
 An early private-provider investigation observed missing-output and input-correlation failures. Repairs preserve recorded semantic targets, invalidate test evidence and require a fresh successful test before publication. Owned fixtures reproduce these failure classes; successful fixtures are not presented as proof that a personal provider workflow passed.
 
-Earlier UI checks covered the neutral interface, a 390px viewport, a single startup indicator and no overlapping busy layer. Preview behavior evolved after the early manual-only milestone; current connected-tab visual sharing is explicit and bounded. See [LIVE-PREVIEW-VALIDATION.md](LIVE-PREVIEW-VALIDATION.md).
+Earlier UI checks covered the neutral interface, a 390px viewport, a single startup indicator and no overlapping busy layer. Preview behavior evolved after the early manual-only milestone; current connected-tab visual sharing is explicit and bounded. See [LIVE-PREVIEW-VALIDATION.md](../archive/LIVE-PREVIEW-VALIDATION.md).
 
 ## Actual public website integrations
 
@@ -191,13 +191,13 @@ Earlier UI checks covered the neutral interface, a 390px viewport, a single star
 
 The complete path was exercised: public connection → record parameterized page → select text outputs → verify another record → publish scoped key → call consumer API → poll verified result. Tests covered two records per site, missing-record failure without a result, cookie-free public replay, encrypted server-held keys, no keys in UI payloads, traversal rejection, wrong-action keys, cross-key run isolation, revocation and OpenAPI constraints.
 
-Results and timestamps: `PUBLIC-INTEGRATION-VALIDATION.json`. The demo UI also returned fresh verified book and author results; no console errors were captured. Screenshot: `screenshots/live-website-results.jpg`.
+Results and timestamps: `../archive/PUBLIC-INTEGRATION-VALIDATION.json`. The demo UI also returned fresh verified book and author results; no console errors were captured. Screenshot: `screenshots/live-website-results.jpg`.
 
 The separate demo contains five generated APIs: two public sites and three independently authenticated synthetic portals. Its catalogs and keys are excluded from the deliverable.
 
 ## Reproducing the checks
 
-Use the startup instructions in [README.md](README.md). Choose an unused loopback port and a separate data directory for disposable validation; run one runtime per data directory. Test credentials and generated scoped keys must be created locally and excluded from reports. Tests must not reset an existing owner workspace.
+Use the startup instructions in [README.md](../../README.md). Choose an unused loopback port and a separate data directory for disposable validation; run one runtime per data directory. Test credentials and generated scoped keys must be created locally and excluded from reports. Tests must not reset an existing owner workspace.
 
 The default source startup uses port 4317 unless HERMO_PORT is set. Configure an OAuth client's callback using the exact origin shown by the running workspace. Port-scoped cookies prevent separate test instances from replacing each other's owner sessions.
 
@@ -205,7 +205,7 @@ The default source startup uses port 4317 unless HERMO_PORT is set. Configure an
 
 Google workspace OAuth does not establish that an automation-controlled website browser is accepted by Google or another provider. Optional normal-Chrome sign-in imports require personal authorization; their downstream provider acceptance remains unverified.
 
-Google workspace authentication does not transfer Google cookies or automatically log connected websites in. The separate private browser feature requires personal Google sign-in and explicit encrypted session saving/reuse; see `GOOGLE-BROWSER.md`. Search-engine selection does not create provider sessions. Anonymous observations in `PUBLIC-BROWSER-CHECK.json` showed Google's login form reachable, while ChatGPT and Claude presented HTTP 403 verification gates. No completed private Google login, CAPTCHA acceptance or provider AI generation is claimed.
+Google workspace authentication does not transfer Google cookies or automatically log connected websites in. The separate private browser feature requires personal Google sign-in and explicit encrypted session saving/reuse; see `../google-browser.md`. Search-engine selection does not create provider sessions. Anonymous observations in `../archive/PUBLIC-BROWSER-CHECK.json` showed Google's login form reachable, while ChatGPT and Claude presented HTTP 403 verification gates. No completed private Google login, CAPTCHA acceptance or provider AI generation is claimed.
 
 Isolated replay allows GET/HEAD retrieval. Selected-tab replay uses ordinary Chrome networking and can execute approved DOM actions with external effects, but is not whole-profile access or a universal AI adapter. The earlier direct ChatGPT-plan connector was removed; current workflows use the shared browser execution engine. Actual personal provider acceptance and Google verification remain unverified. Websites can change, expire sessions, reach quotas or reject access. No zero-error or universal compatibility guarantee is made.
 

@@ -32,8 +32,8 @@
         }
       ],
       "screenshots": {
-        "desktop": "validation/evidence/product-search-desktop.png",
-        "mobile": "validation/evidence/product-search-mobile.png"
+        "desktop": "docs/validation/2026-10-16/evidence/product-search-desktop.png",
+        "mobile": "docs/validation/2026-10-16/evidence/product-search-mobile.png"
       },
       "page_errors": []
     }

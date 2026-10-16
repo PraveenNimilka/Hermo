@@ -54,7 +54,7 @@ Requests are durably accepted with a run ID and serialized to avoid shared-tab i
 
 Cancelling or timing out an active companion run invalidates its tab link to stop pending commands. Other queued requests on that link fail explicitly as BROWSER_DISCONNECTED; reconnect before submitting new work. Cancelling an unstarted queued run leaves the link intact. A possibly issued mutation is reported as EXECUTION_OUTCOME_UNKNOWN with its original cause and no automatic retry. Cancellation cannot undo a website change. Use the original idempotency key to retrieve an accepted receipt even if its tab later disconnects.
 
-The architecture audit and remaining release gaps are in [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md). This release adds lightweight projects, an ordered draft editor, immutable published revisions, recursive output schemas and a real consumer-key API playground. See [NEXT-RELEASE-PLAN.md](NEXT-RELEASE-PLAN.md) for the implementation record and [NEXT-RELEASE-VALIDATION.md](NEXT-RELEASE-VALIDATION.md) for verification evidence and limitations.
+The architecture audit and remaining release gaps are in [PRODUCTION-READINESS.md](docs/archive/PRODUCTION-READINESS.md). This release adds lightweight projects, an ordered draft editor, immutable published revisions, recursive output schemas and a real consumer-key API playground. See [NEXT-RELEASE-PLAN.md](docs/archive/NEXT-RELEASE-PLAN.md) for the implementation record and [NEXT-RELEASE-VALIDATION.md](docs/archive/NEXT-RELEASE-VALIDATION.md) for verification evidence and limitations.
 
 ## Drafts, revisions and execution targets
 
@@ -84,11 +84,11 @@ An omitted optional text-field input actively clears the recorded field, prevent
 
 Outputs support text, number, boolean, URL, nested objects and lists. Configure relative selectors inside an object or repeated row, required/optional and nullable fields, attributes and list limits in the editor. Missing optional fields are omitted; explicitly nullable missing fields can be null. Invalid present values still fail. Numeric extraction accepts a complete finite decimal or exponent value; it does not strip currency symbols, units or thousands separators. Boolean extraction accepts `true` or `false`; URL extraction requires an absolute HTTP(S) URL without credentials. Keep text for values such as `28 °C` or `$149.99` unless the website exposes a separate numeric field. Extraction is bounded to depth 4, 64 mapping nodes, 100 rows per list and 128 KiB of text; limits fail explicitly instead of truncating data into a successful result.
 
-Scalar exports are identified as `hermo.workflow.v0.2` with `contract_version: "2"`; legacy exports retain `v0.1`. Contract format and immutable publication revision are separate identifiers. REST, OpenAPI and the scoped MCP `get_contract` tool expose the recursive output schema. See [SCALAR-CONTRACT-VALIDATION.md](SCALAR-CONTRACT-VALIDATION.md) for the earlier scalar milestone.
+Scalar exports are identified as `hermo.workflow.v0.2` with `contract_version: "2"`; legacy exports retain `v0.1`. Contract format and immutable publication revision are separate identifiers. REST, OpenAPI and the scoped MCP `get_contract` tool expose the recursive output schema. See [SCALAR-CONTRACT-VALIDATION.md](docs/archive/SCALAR-CONTRACT-VALIDATION.md) for the earlier scalar milestone.
 
 ## Three-app integration lab
 
-Open `/examples.html` or choose **Integration lab** in the workspace sidebar. Authorize the local examples, choose **Build & verify APIs**, then run order, shipment and stock lookups. All three applications call real generated consumer APIs using encrypted server-held keys. See [INTEGRATION-LAB.md](INTEGRATION-LAB.md) for the workflow and security boundaries.
+Open `/examples.html` or choose **Integration lab** in the workspace sidebar. Authorize the local examples, choose **Build & verify APIs**, then run order, shipment and stock lookups. All three applications call real generated consumer APIs using encrypted server-held keys. See [INTEGRATION-LAB.md](docs/integration-lab.md) for the workflow and security boundaries.
 
 ## Independent API consumer apps
 
@@ -98,7 +98,7 @@ a paginated records dashboard and a bounded reliability lab. They use published
 workflow-scoped APIs, with no database or private Studio access. Start one with
 `node validation-apps/start.mjs product-search --runtime http://127.0.0.1:4317`,
 then supply your verified workflow endpoint and scoped key. Use the port of your
-running Hermo instance. Their [live acceptance report](REAL-WORLD-VALIDATION.md)
+running Hermo instance. Their [live acceptance report](docs/validation/real-world.md)
 includes real website results, lifecycle checks and screenshots.
 
 ## Use your existing signed-in Chrome tab
@@ -171,7 +171,7 @@ Hermo connects to websites through the browser workflow you record, verify and p
 
 ## Live public websites
 
-Open `/public-examples.html` to generate and consume APIs for **Books to Scrape** and **Quotes to Scrape**, real externally hosted practice websites whose operator explicitly permits automation. The lab records parameterized page reads, checks another record, publishes scoped keys and calls the consumer endpoints. These sites contain demonstration data; they are not private provider accounts. Missing records fail without a successful result. Run `npm.cmd run test:public` for a fresh live-network verification; it uses disposable local data and saves a secret-free `PUBLIC-INTEGRATION-VALIDATION.json` report.
+Open `/public-examples.html` to generate and consume APIs for **Books to Scrape** and **Quotes to Scrape**, real externally hosted practice websites whose operator explicitly permits automation. The lab records parameterized page reads, checks another record, publishes scoped keys and calls the consumer endpoints. These sites contain demonstration data; they are not private provider accounts. Missing records fail without a successful result. Run `npm.cmd run test:public` for a fresh live-network verification; it uses disposable local data and saves a secret-free `docs/archive/PUBLIC-INTEGRATION-VALIDATION.json` report.
 
 To create your own public retrieval, choose **Connect app → Public website · anonymous reads**, open the website and **Confirm public source**. In the action builder, expand **Read a parameterized public page**, provide a template such as `https://books.toscrape.com/catalogue/{book}/index.html`, parameter `book` and example `a-light-in-the-attic_1000`. This creates a URL-derived record output. Select additional visible text outputs, require the record output to equal the input, verify a different record, and publish. Parameters occupy one whole path segment and permit only letters, numbers, underscores and hyphens. Isolated public replay starts without imported account cookies or storage. A selected Chrome tab uses its current website session.
 
@@ -223,7 +223,7 @@ MCP uses authenticated Streamable HTTP POST at `/mcp` on your configured runtime
 - Explicit supporting-domain approvals and redacted network diagnostics. Changing origins revokes affected keys and requires actions to be tested again.
 - Review common sign-in/display services for Gemini, ChatGPT and Claude as a visible list before explicitly approving exact domains. Login redirects can be retried at their original destination after approval.
 - A Google login popup is tracked separately and offers **Continue in Google sign-in tab**. Preview reads, **Retry this tab**, reload and reconnect reconcile existing saved domain approvals. **Refresh preview** captures the isolated view without reloading the website. Connected Chrome has a separate opt-in visual-sharing flow described below.
-- **Privacy → Your Google browser sign-in** saves a manually authenticated Google website session encrypted on this device. Choose that saved session explicitly for private connections; public sources remain anonymous. It is separate from Google workspace OAuth and Chrome Sync. See [GOOGLE-BROWSER.md](GOOGLE-BROWSER.md) for setup, reuse, removal and provider restrictions.
+- **Privacy → Your Google browser sign-in** saves a manually authenticated Google website session encrypted on this device. Choose that saved session explicitly for private connections; public sources remain anonymous. It is separate from Google workspace OAuth and Chrome Sync. See [GOOGLE-BROWSER.md](docs/google-browser.md) for setup, reuse, removal and provider restrictions.
 - If Google refuses the automated browser, **Normal Chrome sign-in** opens a dedicated ordinary Chrome profile with no Playwright/CDP attached. The optional local companion explicitly transfers only Google cookies using a password-protected, one-use ten-minute import code. See [companion/README.md](companion/README.md). Normal Chrome uses its own network/storage; the imported state is a draft sign-in aid, not a guarantee that a provider will accept it.
 - Error, challenge and detected login pages cannot be confirmed as accounts; browser errors keep a useful redacted destination instead of showing `null/`.
 - Manual parameter binding and output selection, immutable saved definitions, exact output/input checks, selected-tab origin/readiness checks and isolated account-text checks.
@@ -234,7 +234,7 @@ MCP uses authenticated Streamable HTTP POST at `/mcp` on your configured runtime
 
 The isolated engine supports deterministic **retrieval** and filters replay to GET/HEAD without WebSockets. The selected-tab engine replays approved DOM controls in normal Chrome with ordinary networking, including form effects; it is not a network sandbox. Top-level text inputs, open-shadow controls, native selects, checkboxes, clicks and bounded text outputs are supported. Cross-origin frames, files, closed shadow roots, canvas-only controls and interactions requiring trusted physical input remain unsupported in this mode. Neither mode guarantees universal website compatibility.
 
-See [BROWSER-COMPATIBILITY.md](BROWSER-COMPATIBILITY.md) for blank-page troubleshooting, domain approvals and the observed ChatGPT/Claude verification screens.
+See [BROWSER-COMPATIBILITY.md](docs/browser-compatibility.md) for blank-page troubleshooting, domain approvals and the observed ChatGPT/Claude verification screens.
 
 No CAPTCHA solving, OAuth account brokerage, file inputs, automatic schema inference, automatic repairs, workflow import, cloud relay, public hosting or multi-user tenancy is implemented. UI changes fail for human review. Selected-tab actions can have external effects, and cancellation cannot recall transmitted traffic. Companion authority binds an exact selected tab/origin, not a specific website account. Isolated account verification is a user-selected text marker, not cryptographic proof of vendor identity. Checks establish output correlation; they cannot prove business truth, freshness of every asynchronous field or completion of arbitrary AI generation.
 
@@ -249,7 +249,7 @@ npm.cmd run build
 npm.cmd audit
 ```
 
-See [CURRENT-VALIDATION.md](CURRENT-VALIDATION.md) and [REAL-WORLD-VALIDATION.md](REAL-WORLD-VALIDATION.md) for dated verification scope and remaining gaps, and [REAL-WORLD-BUGFIXES.md](REAL-WORLD-BUGFIXES.md) for release findings. Historical reports retain their original test scope; they are not evidence that a later change passed. [SECURITY.md](SECURITY.md) describes the trust boundaries. This is an early-access product for local evaluation, with no independent security certification. Do not expose its port publicly or use unreviewed workflows for sensitive production operations.
+See [CURRENT-VALIDATION.md](docs/validation/current.md) and [REAL-WORLD-VALIDATION.md](docs/validation/real-world.md) for dated verification scope and remaining gaps, and [REAL-WORLD-BUGFIXES.md](docs/validation/bugfixes.md) for release findings. Historical reports retain their original test scope; they are not evidence that a later change passed. [SECURITY.md](SECURITY.md) describes the trust boundaries. This is an early-access product for local evaluation, with no independent security certification. Do not expose its port publicly or use unreviewed workflows for sensitive production operations.
 
 ## Code layout
 
@@ -259,7 +259,7 @@ Hermo-authored code is MIT licensed. Included third-party code and assets retain
 
 ## Interface and third-party assets
 
-The visual refresh, generated hermit-crab logo prompt, React Bits adaptations, and local typography are documented in [BRAND-DESIGN.md](BRAND-DESIGN.md). Hermo project code is MIT licensed; React Bits component code retains its MIT + Commons Clause conditions and Inter retains its OFL license under `licenses/`. These third-party terms are not replaced by the project license.
+The visual refresh, generated hermit-crab logo prompt, React Bits adaptations, and local typography are documented in [BRAND-DESIGN.md](docs/design/brand.md). Hermo project code is MIT licensed; React Bits component code retains its MIT + Commons Clause conditions and Inter retains its OFL license under `licenses/`. These third-party terms are not replaced by the project license.
 
 ### Actual connected website preview
 

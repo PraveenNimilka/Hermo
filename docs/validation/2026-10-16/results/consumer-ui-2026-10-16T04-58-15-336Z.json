@@ -55,8 +55,8 @@
         }
       ],
       "screenshots": {
-        "desktop": "validation/evidence/change-detector-desktop.png",
-        "mobile": "validation/evidence/change-detector-mobile.png"
+        "desktop": "docs/validation/2026-10-16/evidence/change-detector-desktop.png",
+        "mobile": "docs/validation/2026-10-16/evidence/change-detector-mobile.png"
       },
       "page_errors": []
     },
@@ -89,8 +89,8 @@
         }
       ],
       "screenshots": {
-        "desktop": "validation/evidence/json-explorer-desktop.png",
-        "mobile": "validation/evidence/json-explorer-mobile.png"
+        "desktop": "docs/validation/2026-10-16/evidence/json-explorer-desktop.png",
+        "mobile": "docs/validation/2026-10-16/evidence/json-explorer-mobile.png"
       },
       "page_errors": []
     },
@@ -123,8 +123,8 @@
         }
       ],
       "screenshots": {
-        "desktop": "validation/evidence/mcp-tools-desktop.png",
-        "mobile": "validation/evidence/mcp-tools-mobile.png"
+        "desktop": "docs/validation/2026-10-16/evidence/mcp-tools-desktop.png",
+        "mobile": "docs/validation/2026-10-16/evidence/mcp-tools-mobile.png"
       },
       "page_errors": []
     },
@@ -157,8 +157,8 @@
         }
       ],
       "screenshots": {
-        "desktop": "validation/evidence/website-dashboard-desktop.png",
-        "mobile": "validation/evidence/website-dashboard-mobile.png"
+        "desktop": "docs/validation/2026-10-16/evidence/website-dashboard-desktop.png",
+        "mobile": "docs/validation/2026-10-16/evidence/website-dashboard-mobile.png"
       },
       "page_errors": []
     },
@@ -214,8 +214,8 @@
         }
       ],
       "screenshots": {
-        "desktop": "validation/evidence/reliability-lab-desktop.png",
-        "mobile": "validation/evidence/reliability-lab-mobile.png"
+        "desktop": "docs/validation/2026-10-16/evidence/reliability-lab-desktop.png",
+        "mobile": "docs/validation/2026-10-16/evidence/reliability-lab-mobile.png"
       },
       "page_errors": []
     }

@@ -1,6 +1,6 @@
 # Universal website bridge and dashboard validation
 
-14 October 2026. This update implements the universal website task model in [the plan](UNIVERSAL-WEBSITE-BRIDGE-PLAN.md) and the shared interface direction in [the design system](design-system/hermo/MASTER.md).
+14 October 2026. This update implements the universal website task model in [the plan](UNIVERSAL-WEBSITE-BRIDGE-PLAN.md) and the shared interface direction in [the design system](../design/interface.md).
 
 ## Implemented
 
