@@ -15,7 +15,7 @@ screenshots/
 *.key
 work/
 
-# Local coding-agent tools and downloaded design guidance
+# Local workspace configuration
 .agents/
 .codex/
 
@@ -25,6 +25,13 @@ work/
 /DESIGN-VALIDATION.json
 /PUBLIC-BROWSER-CHECK.json
 /GOOGLE-PRIVATE-BROWSER-CHECK.json
+/docs/archive/
+/docs/validation/
+/*-VALIDATION.md
+/*-BUGFIXES.md
+/*-REPORT.md
+/*-PLAN.md
+/*-RESEARCH.md
 
 # Local diagnostics, credentials and editor/OS caches
 coverage/

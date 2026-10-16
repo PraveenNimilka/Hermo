@@ -1,43 +1,76 @@
-# Browser compatibility update — 13 October 2026
+# Browser compatibility
 
-The earlier preview could capture a page at DOMContentLoaded and remain stuck while the app hydrated. Hermo also blocked every supporting origin except the entry domain, without showing why. Modern editors, shadow-root fields and framed controls were missed by the scanner.
+Hermo supports two local execution modes. A website loading successfully does
+not establish that its sign-in, controls or output extraction will work.
 
-The update uses manual preview refresh, a bounded initial hydration wait, frame-navigation retries and stable element identifiers. It detects rich-text/contenteditable fields, native select/checkbox controls, accessible role controls, frames and open shadow roots. Frame paths are saved in recorded steps, account markers and outputs and used by replay.
+| Mode | Browser | Execution boundary |
+| --- | --- | --- |
+| Connected Chrome | An explicitly authorized existing tab | Recorded actions use the current website session and can change data. Commands are scoped to the authorized tab, origin and path. |
+| Isolated retrieval | A separate local Chromium context | Approved origins, public-network restrictions and GET/HEAD replay. It cannot submit forms or generate media. |
 
-Connection mode supports screenshot clicks, explicit scrolling, supported keyboard keys, masked text entry into the focused field, back/forward/reload and popup-tab selection. **Open desktop browser** transfers the current session into a visible, isolated Chromium window for direct manual interaction. Its cookies/IndexedDB transfer within Hermo; it does not import your normal Chrome profile. It remains automation-controlled and is not a guarantee of website verification acceptance. During recording, use detected controls to create replayable steps; arbitrary pointer/keyboard/navigation actions are rejected. Scrolling remains available.
+The dashboard can close while the runtime remains running. Both modes still
+need an available local browser. Connected-tab setup is documented in the
+[companion guide](../companion/browser/README.md).
 
-## When a page looks blank
+## Controls and results
 
-1. Reload Hermo at http://127.0.0.1:4317 and unlock with your existing workspace password. Open or reconnect the app.
-2. Wait for the live preview. Open **Network diagnostics** if domains are blocked or network requests failed.
-3. For Gemini, ChatGPT or Claude, expand **Review … sign-in and display services** to inspect a list of exact common service domains, then choose **Allow listed services & retry** if you approve those services. Otherwise review an individual required domain and choose **Allow domain & retry**. There is no wildcard approval. Approval changes the connection's network permissions, revokes associated consumer keys and requires affected actions to be tested and published again. Some Cloudflare subdomain requests are non-blocking verification probes; they are labeled accordingly and are not offered as mandatory approvals.
-4. If the website requests human verification or MFA, use **Open desktop browser** to handle it directly in the window yourself. Hermo does not solve or bypass access checks. Some providers reject automated browsers even after manual verification; desktop mode cannot certify the browser as human.
-5. Use detected fields or click a field in the preview, then expand **Keyboard input for the focused website field** to type text. The value is masked in Hermo, but is sent to the focused website element. Select a popup from **Website tab** if authentication opens one.
+Supported DOM workflows include text fields, rich-text editors, accessible
+controls, native select and checkbox inputs, and open shadow roots. Availability
+depends on the execution mode and negotiated companion capabilities. Missing or
+ambiguous locators fail rather than choosing another element silently.
 
-Private/reserved destinations, metadata hosts, nondefault HTTPS ports and local management routes remain blocked. Approving a domain does not override those rules. Requests and redirects to additional origins require their own approval. Service-worker-dependent apps can still fail because service workers remain disabled.
+During recording, use detected controls to create replayable steps. In the
+isolated browser, arbitrary pointer, keyboard and navigation commands are
+restricted while recording so that unrecorded interactions cannot become hidden
+workflow requirements. Scrolling remains available.
 
-## Actual public-site observations
+Cross-origin frames, closed shadow roots, canvas-only controls, native device
+prompts and file transfers are not universally supported. Media extraction
+requires an actual supported result URL; a visible image alone does not ensure
+that another application can access it. See the [user guide](user-guide.md).
 
-For ChatGPT's **Log in → Failed to fetch / net::ERR_FAILED** case, expand **Review ChatGPT sign-in and display services**, review the exact OpenAI authentication/asset domains, then choose **Allow listed services & retry** and attempt login again. Origin approvals remain explicit. Fetch redirects can be blocked before normal page events expose the destination; proxy diagnostics now show those destinations as well. With zero blocked domains, a request failure can instead indicate cross-origin checks, the website or the network; granting unrelated domains is not a remedy. If Hermo's own panel reports a lost local connection, keep the local server running and refresh/unlock.
+## Preview and sign-in
 
-For **Continue with Google → accounts.google.com → ERR_BLOCKED_BY_CLIENT**, review and allow that identity provider separately. The browser now recognizes the current Google sign-in destination and offers **Review Google sign-in and display services** instead of only the original app's domains. It retries the remembered Google URL after approval. Other identity providers still require their own exact-domain approvals.
+Connected Chrome offers **Detected fields** and a separately authorized visual
+preview. Enable visual preview explicitly from the companion on the paired tab.
+Detected fields are a simplified inspection, not a copy of the website layout.
 
-If Google is **already approved**, do not repeatedly expand permissions. Select **Continue in Google sign-in tab** or choose the Google address under **Website tab**, then use **Retry this tab** when the error is displayed (or the toolbar's **Reload website**). Retry/reload and reconnect synchronize the active browser with the connection's existing saved approvals. Desktop handoff retains permission updates made while it opens. The popup's first navigation is now tracked at context scope, so a blocked popup keeps its Google address instead of inheriting the original website's address. Permission review for a Google popup selects that popup before retrying it.
+The isolated preview refreshes after Hermo interactions or **Refresh preview**.
+Refreshing the preview does not navigate the website. Direct changes in its
+desktop window need a manual preview refresh. **Open desktop browser** transfers
+the current isolated session for manual interaction; its sandbox and network
+restrictions remain in force. It does not import your everyday Chrome profile.
 
-Automatic 2.5-second preview polling has been removed. Hermo captures the screenshot and controls after its interactions or when **Refresh preview** is chosen. This **does not navigate or reload the website**. Direct desktop-browser changes need a manual preview refresh. An abrupt browser TCP reset is handled by the proxy from connection acceptance, including denied CONNECT requests, rather than crashing the runner with an unhandled ECONNRESET.
+Complete sign-in, MFA and website verification personally. Hermo does not solve
+access checks or guarantee that a website will accept an automated browser.
+Optional Google setup is described in the [Google browser guide](google-browser.md).
 
-**Privacy → Your Google browser sign-in** can preserve a manually authenticated Google website session encrypted on this device and explicitly copy it into a private app connection. Saving is restricted to ready Google account pages with a selected email marker. Applying/removing sign-ins invalidates dependent published keys; public sources always remain anonymous. See [GOOGLE-BROWSER.md](google-browser.md). Saved sign-in does not silently approve domains in unrelated existing connections or guarantee provider acceptance.
+## Troubleshooting isolated pages
 
-Closing/reopening the connection dialog or refreshing Hermo's UI resumes a still-active isolated browser session. This keeps in-progress login tabs and cookies in memory while the server remains running. Workspace lock, browser closure or server restart ends that active session; confirmed saved sessions remain encrypted. A new recording still opens its saved checkpoint for a reproducible demonstration.
+1. Open your running Hermo instance, unlock it, and reconnect the website.
+2. If a page is blank or fails to load, inspect **Network diagnostics**.
+3. Review exact supporting domains before approving them. Redirects and
+   identity-provider popups can require separate approval. Approval invalidates
+   affected keys and test evidence; test and publish the workflow again.
+4. If the domain is already approved, select the correct **Website tab** and
+   choose **Retry this tab** or **Reload website**. Do not repeatedly expand
+   permissions when the problem is a website or network failure.
+5. Use **Open desktop browser** when direct manual interaction is needed.
 
-Logged-out checks in an isolated workspace reached human-verification pages at both **chatgpt.com** and **claude.ai**. ChatGPT initially needed **challenges.cloudflare.com**; approving that specific domain exposed a further **hagen.challenges.cloudflare.com** probe request and a visible verification checkbox. The checkbox was not solved, and neither website was signed into. Later research confirmed that Cloudflare subdomain probe failures can be normal; the updated UI distinguishes them from required service approvals.
+Domain approval does not allow private or reserved network destinations,
+metadata hosts, nondefault HTTPS ports or local management routes. Isolated
+service workers are disabled; applications that require them may fail. Approved
+encrypted sockets are available during isolated setup, while replay blocks
+sockets and external write requests.
 
-The Gemini interface loaded after approval of its script/font services. **Sign in** reached the real Google Accounts identity form with HTTP 200 and an **Email or phone** input; no credentials were entered. The earlier tunnel failure is now diagnosed at the proxy, and failed login destinations can be retried after approving their required origin. Browser errors retain readable addresses without exposing query parameters. Error, verification and detected login pages cannot be confirmed as accounts.
+Reopening the connection dialog resumes a still-active isolated session. Lock,
+browser closure or runtime restart ends that active session; explicitly saved
+sessions remain encrypted. A new recording opens its saved checkpoint.
 
-These observations establish that the preview and diagnostics operate against those public pages. They do not establish successful authenticated ChatGPT/Claude workflows or API compatibility. Website responses can change with network, browser, time and account.
+## Testing scope
 
-## Remaining limits
-
-This uses Chromium behind an exact-origin policy proxy, with headless preview and explicit headed desktop interaction modes. It is not a universal app browser. Native desktop/mobile apps, browser extensions, passkeys/security-device prompts, file uploads/downloads, closed shadow roots, canvas-only widgets and vendor anti-automation restrictions are not universally supported. Approved encrypted sockets are available during Studio interaction; replay remains GET/HEAD-only and blocks sockets and external write requests. Consumer AI prompts commonly use POST/streaming and do not become a supported replay API merely because their login page loads.
-
-Automated checks exercise delayed hydration, stable controls, rich text, open shadow roots, iframe outputs, select/checkbox replay, pointer/keyboard/scroll/reload, popup switching, challenge detection, query-redacted diagnostics, CSRF/input boundaries and key invalidation after origin expansion. No universal compatibility or independent security certification is claimed.
+The automated suites use owned fixtures and disposable browser profiles. They
+cover supported controls, lifecycle recovery, network restrictions and output
+verification. External checks are opt-in and described in
+[Contributing](../CONTRIBUTING.md#external-website-checks). Neither fixture tests
+nor a past successful website run guarantee future website compatibility.

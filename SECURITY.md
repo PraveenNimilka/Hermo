@@ -1,8 +1,8 @@
-# Security — Hermo local runtime
+# Security
 
-Scope: implementation boundaries and dated local validation for the early-access product, updated 16 October 2026. This is not an independent audit or penetration-test certification. Logged-out ChatGPT and Claude pages were checked in a disposable workspace; no real customer account or vendor login was used.
+Hermo is an early-access local runtime with access to explicitly authorized browser sessions. This document describes its security boundaries and known limitations. No independent security audit or penetration-test certification is claimed.
 
-## Verified media previews — 15 October 2026
+## Media output previews
 
 Published outputs may declare image/video/audio/file URL hints; these are schema
 metadata, not executable instructions. URL conversion rejects credentials and
@@ -33,7 +33,7 @@ Website connections default to an explicitly selected normal-Chrome tab. Compani
 
 Owner authentication, CSRF and explicit website/action authorization protect one-use ten-minute pairing codes. Codes are hashed in server memory and bound to owner, connection and exact website origin. Optional password confirmation remains compatible. The runtime credential remains in worker memory; the server stores only its hash. Only four exact companion POST/OPTIONS routes accept extension requests. Wrong-site pairing, replayed codes, unauthenticated replies and unsolicited command IDs fail. Restart, owner expiry, lock, Stop or lost transport ends active access; saved configuration remains. RPCs time out and detach without retrying uncertain actions.
 
-Pairing immediately marks the authorized tab Connected. Private companion tabs no longer require or pin a detected account name/email. Runs use whichever account is currently signed in to the selected tab. A profile-name change therefore does not revoke keys or fail a run; this is an explicit product behavior change requested by the owner, not proof of vendor identity. Existing isolated private-browser replay and optional Google sign-in imports retain their identity checks.
+Pairing marks the authorized tab Connected without requiring a detected account name or email. Runs use whichever account is currently signed in to the selected tab. A profile-name change does not revoke keys or fail a run. Tab authorization does not prove vendor identity. Isolated private-browser replay and optional Google sign-in imports retain their identity checks.
 
 Every command checks the selected tab ID, exact origin and scoped path. Local demo access remains restricted to /sandbox/, excluding Studio/private routes. Commands use registered local functions in Chrome's isolated world, not downloaded scripts. Detected sign-in/credential/challenge/refusal pages cannot record or return successful results. A sign-in failure leaves a still-live paired transport Connected so the owner can complete website sign-in and retry without pairing or confirmation. Leaving the approved origin, closing the tab, Stop or owner lock ends its live authority. Same-origin reload preserves an active connection.
 
@@ -43,9 +43,9 @@ Real Chrome tests use only new empty disposable profiles, synthetic website acco
 
 ### Other integration boundaries
 
-The provider-specific ChatGPT-plan connector was removed on 14 October 2026. Its OAuth callback, direct response endpoint, key authorization and setup/example pages are no longer available. Historical encrypted connector settings are retained without a runtime reader; removing source does not revoke an authorization already granted at an external provider. They are excluded from workspace exports as before. Recorded website ChatGPT/Claude tasks use the same approved browser action, verification and scoped `hm_live_` authorization as other website tasks. Google workspace sign-in remains independent and keeps its existing callback and owner checks.
+Hermo's published APIs execute recorded website workflows; they do not provide a provider-plan API connector. Old encrypted connector settings can remain in upgraded workspaces for compatibility, without an active runtime reader. They are excluded from exports. Removing a local integration does not revoke authorization already granted at an external provider. Google workspace sign-in is separate from website execution and uses its own callback and owner checks.
 
-Tests use synthetic OAuth identities, signing keys, streams and an owned consent fixture. Those historical protocol tests do not establish live provider acceptance, and the removed connector is not a current integration option. Google's automation refusal is explicitly recognized as `auth_rejected` and cannot be confirmed as a connection identity. No automated CAPTCHA solution, browser fingerprint disguise or silent cookie/profile attachment is introduced.
+OAuth tests use synthetic identities, signing keys and an owned consent fixture; they do not establish live provider acceptance. Google's automation refusal is recognized as `auth_rejected` and cannot be confirmed as a connection identity. Hermo does not solve CAPTCHA, disguise browser fingerprints or silently attach website sessions.
 
 | Boundary | Protection | Remaining limit |
 | --- | --- | --- |
@@ -55,10 +55,10 @@ Tests use synthetic OAuth identities, signing keys, streams and an owned consent
 | Website → execution | Chromium sandbox enabled, isolated contexts, no service workers, exact-origin approved encrypted WebSockets in Studio only, all WebSockets blocked during replay, cancelled downloads, rejected dialogs, no model instruction channel | Browser/runtime updates remain necessary; conventional malicious web pages still execute JavaScript in the browser sandbox |
 | Replay → external effects | Isolated replay uses GET/HEAD filtering; connected-tab replay requires explicit approval of recorded actions and exposes effects in MCP/OpenAPI | Normal tabs can submit forms/change data. Even GET can write; cancellation cannot undo external effects |
 | Database → filesystem reader | AES-256-GCM encrypted browser state, workflow values, and run payloads; fresh nonces; Windows DPAPI-wrapped key; password scrypt and hashed API keys | Database is not wholly encrypted: names, entry URLs, timestamps, statuses, IDs and password/key hashes are metadata. OS user/process compromise can read memory or decrypt |
-| Execution → result | Account-text check before and after, unique visible nonempty outputs, exact requested-input correlation, no result on failure | Site-provided text is not an authoritative or cryptographic guarantee; asynchronous stale auxiliary fields remain possible |
+| Execution → result | Origin checks, identity checks where required by the browser mode, required output checks, input correlation and typed conversion; no successful result on failed verification | Site-provided text is not an authoritative or cryptographic guarantee; asynchronous stale auxiliary fields remain possible |
 | MCP request → another consumer | Separate server and transport for every authenticated request, action scope and own-run queries | Client must support authenticated Streamable HTTP; no network relay included |
 
-Responses use no-store, nosniff, restrictive CSP, frame-ancestor denial and permissions denial. Studio referrers are suppressed. The synthetic portal uses same-origin referrers to support browser form-origin checks. Passwords are prohibited in recorded actions; the separately confirmed browser session is encrypted. No screenshots or secrets are written to logs by the runtime. Studio screenshots are transient browser data and can show whatever the signed-in website displays.
+Responses use no-store, nosniff, restrictive CSP, frame-ancestor denial and permissions denial. Studio referrers are suppressed. The synthetic portal uses same-origin referrers to support browser form-origin checks. Password fields are excluded from recorded actions; saved browser sessions are encrypted. Step diagnostics use sanitized categories. Workflow values and encrypted run payloads can still contain sensitive data and are not automatically redacted. Studio screenshots are transient browser data and can show whatever the signed-in website displays.
 
 Locking the workspace invalidates that owner session, discards unsaved recordings and closes Studio browser contexts. Consumer keys remain independently scoped and are not revoked by Lock. Closing the dashboard leaves runtime and companion authority intact. Explicit Lock ends companion links and active tab runs; isolated replay has separate consumer authorization. Disconnecting drops the saved session, revokes its keys and returns associated actions to draft. Pause/revoke/disconnect request abortion of matching active jobs. Already-transmitted traffic cannot be recalled.
 
@@ -72,26 +72,32 @@ Recording, pairing and accepted executions exclude conflicting owner mutations. 
 
 Active companion cancellation/timeout invalidates the live link, including pending command authority. Unstarted sibling requests fail as disconnected rather than being silently replayed or reported as cancelled. Explicit Stop cancels accepted work for that connection. A possible submission followed by transport loss, timeout, revocation or runtime interruption has an unknown external outcome; the original cause is retained and automatic retry is prohibited. API receipt reuse remains available after tab disconnection with a still-valid scoped key.
 
-## Findings corrected during development
+## Network and recording constraints
 
-- Incorrect SQL placeholder counts blocked key creation and durable run admission; corrected and exercised by integration tests.
-- Encoded, backslash, doubled-slash and traversal-like control-plane paths could bypass prefix-based guards; raw noncanonical paths now fail before routing.
-- Proxy authentication lacked the 407 challenge expected by Chromium; corrected without loosening destination policies.
-- The demo login's no-referrer response caused a null form origin; corrected only the demo response policy, retaining strict origin validation.
-- SDK and static-serving dependency vulnerabilities were removed by updating versions; the dependency audit at that milestone found zero reported vulnerabilities. Recheck advisories for each release.
-- MCP action names could collide with utility names; action tools now carry an `action_` prefix and each request has its own transport/server.
-- Locking originally left Studio browser contexts alive; locking now closes them. Mobile UI now exposes the lock control.
-- Supporting-domain failures were invisible. Diagnostics now expose only origin, resource type and reason; request queries/bodies are excluded. Origins require explicit approval, public DNS/IP validation and default HTTPS ports. Public websites cannot add the local sandbox as a dependency.
-- Expanding origins revokes affected consumer keys, invalidates tested status and returns actions to draft. Active matching jobs are aborted; already-transmitted traffic cannot be recalled. Current Studio cookies remain in the same isolated context.
-- Raw pointer/keyboard/navigation and unassociated control calls are rejected while recording to avoid silently missing workflow steps. Scrolling is permitted. Popup context timeouts and frame-navigation snapshot retries are bounded.
-- Select/checkbox literal values are redacted from workflow exports, matching text-field export treatment. Parameter values and owner run exports may still contain private data.
-- CONNECT-level failures now have per-context origin-only diagnostics, including redirected/preflight destinations that may be absent from page request events. Background connection entries remain visible for diagnosis but do not change page readiness unless observed or needed by the main navigation. All DNS results must remain public before any TCP connection; bounded fallback tries additional validated addresses, with IPv4 preferred.
-- Failed navigation destinations are retained only in Studio memory for explicit retry; exposed addresses omit queries/fragments. Error, challenge and detected login pages have no selectable outputs and cannot be confirmed as accounts. Equivalent frame outputs are suppressed. These heuristics are not vendor authentication proof.
-- Desktop handoff requires an authenticated owner, CSRF token and explicit action. It transfers in-memory cookies/IndexedDB into another isolated context while retaining the proxy, sandbox, allowed origins and download restrictions. Desktop handoff does not import regular browser profiles; the separately authorized normal-Chrome companion can import only reviewed Google cookies as described below. No fingerprint masking or challenge solver is present.
-- Owner-session expiry/restart clears private UI state and returns to unlock automatically. Stale poll responses cannot overwrite the result of a newer browser operation.
-- Dialog reopening can explicitly resume the same connection's active isolated context, preserving login progress in memory. Owner/CSRF checks still apply; workspace lock closes these contexts. After restart, only explicitly saved encrypted drafts or confirmed sessions are restored.
-- Popup initial-navigation metadata is captured at BrowserContext scope and associated only through Playwright's actual frame/page identity. Unassigned navigation metadata is bounded to 32 requests in memory; exposed tab addresses still omit queries and fragments. Retrying or resuming synchronizes only persisted, previously approved origins. Permission additions still require the existing authenticated, CSRF-protected approval flow and invalidate published access.
-- Proxy socket error handling exists from acceptance, including denied CONNECT and aborted local HTTP requests. Connection resets close the affected transport; they do not trigger request replay or relax egress policy.
+Control-plane routes reject encoded, doubled-slash, backslash and traversal-like
+paths before routing. Isolated browser connections enforce approved exact
+origins, public DNS/IP results and allowed ports before making a connection.
+Redirect and CONNECT diagnostics expose origins, resource categories and reasons,
+not request queries or bodies. Transport resets close the affected connection;
+they do not relax policy or repeat requests.
+
+Approving an additional origin revokes affected keys, invalidates test evidence,
+returns affected actions to draft and aborts matching jobs. Login, challenge and
+error pages cannot provide successful outputs. Public websites cannot add local
+management routes or the sandbox as supporting services.
+
+Recording uses associated detected controls. Unassociated pointer, keyboard and
+navigation calls are restricted during recording; scrolling is permitted. Popup
+tracking uses actual browser page/frame identities, and pending navigation
+metadata is bounded in memory. Exposed tab addresses omit queries and fragments.
+
+Text, select and checkbox literal values are redacted from workflow exports.
+Input defaults and owner run exports can still contain private data. Desktop
+handoff requires owner authentication, CSRF and explicit authorization. Session
+state transfers only between Hermo's isolated contexts, retaining sandbox,
+network and download restrictions; it does not import ordinary browser profiles.
+If handoff fails, the previous context is retained. Expired owner sessions clear
+private UI state, and stale responses cannot replace newer browser operations.
 
 ## Operation and retention
 
@@ -99,7 +105,7 @@ Active companion cancellation/timeout invalidates the live link, including pendi
 
 Private Google browser profiles are separate from the workspace OAuth identity. Owner/CSRF-protected routes save only a selected ready, top-level Google account email marker and an authenticated-looking session; this is a user-selected marker, not cryptographic vendor identity proof. Reusable cookies are filtered by correct domain boundaries to reviewed Google hosts; origin storage is filtered by exact origin. Profiles are encrypted, capped at five and 2 MB each, and excluded from exports, logs and audit payloads. Their responses expose metadata only. Applying a profile requires explicit authorization, public-IP validation of the fixed Google origins and no active recording, creates a draft session, closes the previous Studio context, and revokes affected keys/actions/jobs. Confirmed replay state is not silently replaced. Public sessions cannot import or save profiles. Removing a profile clears the stored profile and dependent connection states and revokes keys; it does not revoke Google sessions on other devices. Saving/restoring uses cookies, local storage and IndexedDB, not the everyday Chrome profile or Chrome Sync. Signed-in Google sessions may expire or be rejected by providers; no automation concealment or CAPTCHA solver is present.
 
-The earlier isolated-browser milestone removed its automatic screenshot timer: isolated captures are explicit or follow a Hermo interaction. Connected Chrome now refreshes detected fields while its owner panel is open; companion 0.7.0 additionally supports explicitly enabled visual sharing, with the capture lease and freshness rules described below. Each owner-authenticated preview read reconciles the active browser policy against that connection's persisted exact origins; unchanged permissions do not reset capture state. This does not authorize new origins or relax private-IP, proxy, CSRF, retrieval-method or account-confirmation protections. Preview-capture failures are reported separately from actual browser closure.
+Isolated captures are explicit or follow a Hermo interaction. Connected Chrome refreshes detected fields while its owner panel is open and supports explicitly enabled visual sharing, with the capture lease and freshness rules described below. Each owner-authenticated preview read reconciles the active browser policy against that connection's persisted exact origins; unchanged permissions do not reset capture state. This does not authorize new origins or relax private-IP, proxy, CSRF, retrieval-method or account-confirmation protections. Preview-capture failures are reported separately from actual browser closure.
 
 ### Normal-Chrome companion boundary
 
@@ -146,7 +152,7 @@ Independent code/security review; adversarial public-site testing in disposable 
 No independent security audit or completed external review is claimed.
 
 
-## Integration-lab and browser lifecycle additions
+## Practice applications and browser lifecycle
 
 The three demo portals use synthetic credentials and independent HttpOnly cookies. Owner-only lab setup uses the ordinary recording, confirmation, testing and publication routes. Its catalog is encrypted; consumer key secrets are never returned to the lab browser or stored in browser storage. Lab result polling uses the same key ownership checks and quotas as other consumers. Setup requires explicit authorization and a valid CSRF token; locking the workspace denies subsequent owner calls. Rebuild rotates and revokes previous lab keys.
 
@@ -154,7 +160,7 @@ Preview captures are deduplicated. Desktop transfer waits for a pending capture 
 
 Automated tests and dependency advisory checks are project validation, not independent security certification or a guarantee of zero vulnerabilities.
 
-## Selected-tab visual sharing (companion 0.7.0)
+## Selected-tab visual sharing
 
 Visual sharing requires the owner's explicit **Enable live preview** action from the companion popup on an already paired website tab. New tabCapture/offscreen permissions add no website host grants. Video only; no audio, desktop-wide capture, debugger, cookie access, recorded video, or persistent frame cache. A hidden extension document samples bounded JPEG frames on authenticated owner requests; generated workflow keys have no preview or arbitrary capture route.
 

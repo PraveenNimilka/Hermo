@@ -17,6 +17,15 @@ For interface changes, preserve the shared neutral design tokens, visible focus,
 keyboard operation, meaningful labels, responsive spacing and reduced motion.
 Verify both desktop and narrow layouts, including successful and failed requests.
 
+## Repository conventions
+
+Keep root documentation limited to the README, contribution, security, license
+and third-party notices. Put maintained operating guides in `docs/`. Keep
+temporary plans, reports, captures and local configuration under ignored `work/`.
+Run `npm run check:repo` before submitting changes; CI enforces the same rules.
+Report test commands and results in the pull request. Automated test results do
+not constitute an independent security review or certify website compatibility.
+
 ## External website checks
 
 External checks are opt-in. They use read-only catalog and quote pages from

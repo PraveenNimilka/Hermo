@@ -11,6 +11,7 @@
     "dev": "node server/index.mjs",
     "build": "tsc --noEmit && vite build",
     "start": "node server/index.mjs",
+    "check:repo": "node scripts/check-repository.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "test:e2e": "node --test tests/workflow.test.mjs",
     "test:public": "node scripts/verify-public.mjs",

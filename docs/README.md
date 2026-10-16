@@ -12,7 +12,7 @@
 
 - [Chrome companion](../companion/browser/README.md) — selected-tab setup and lifecycle.
 - [Browser compatibility](browser-compatibility.md) — supported behavior and unverified cases.
-- [Independent API consumers](../validation-apps/README.md) — runnable REST/MCP clients.
+- [API consumer examples](../validation-apps/README.md) — runnable REST/MCP clients.
 - [Integration lab](integration-lab.md) — owned practice portals and generated APIs.
 - [Google browser setup](google-browser.md) — optional dedicated sign-in; separate from ordinary tab pairing.
 - [Contributing](../CONTRIBUTING.md) — local checks and review expectations.

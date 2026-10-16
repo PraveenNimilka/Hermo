@@ -28,6 +28,7 @@ Rebuilding reuses the three example workflows, reconnects their synthetic accoun
 
 ## Tested boundaries
 
-The automated test builds, consumes and rebuilds all three integrations; checks two valid records per app, unknown records, cross-key execution rejection, wrong-app run rejection, encrypted secret storage, revocation, CSRF and logout. The UI walkthrough also exercises concurrent application requests and a missing record at desktop and mobile widths.
-
-External sign-in is a separate test. These local results do not demonstrate authenticated ChatGPT, Claude or Google account access, and the MVP's replay policy remains GET/HEAD retrieval.
+Run `node --test tests/examples.test.mjs` to exercise setup, publication, consumer
+calls, missing records, key isolation, revocation and owner access boundaries.
+These practice applications use synthetic data and isolated GET/HEAD retrieval.
+They do not establish compatibility with a third-party account or website.

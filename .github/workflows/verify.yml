@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - run: npm run check:repo
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm run build

@@ -36,6 +36,8 @@ Hermo is in early access. Execution requires the local runtime and an authorized
 
 Use Hermo for supported searches, catalogs, dashboards, forms, internal tools and
 AI websites. Website permissions and technical limits still apply.
+Use workflows only where you are authorized and automation is permitted. Hermo
+does not bypass website access checks.
 
 ## How it works
 
@@ -129,7 +131,7 @@ server/           Fastify runtime, SQLite store, workflow engine and adapters
 companion/        Chrome extensions and their setup guides
 public/           Served guides, examples and local practice pages
 tests/            Runtime, browser, security and workflow regression tests
-validation-apps/  Independent REST/MCP consumer applications
+validation-apps/  Example REST/MCP consumer applications
 scripts/          Explicit integration and public-site verification tools
 docs/             Installation, usage, configuration and architecture
 ```
@@ -138,6 +140,7 @@ docs/             Installation, usage, configuration and architecture
 
 ```sh
 npm ci
+npm run check:repo
 npx playwright install chromium
 npm run build
 npm test
