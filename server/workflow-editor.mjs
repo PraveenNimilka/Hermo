@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {hash} from './store.mjs';
 import {inputFieldSchema,outputMappingSchema,validateOutputMappings,validateWorkflowContract} from './workflow-contract.mjs';
-import {validateWorkflowSteps,workflowLocatorSchema} from './workflow-steps.mjs';
+import {validateWorkflowSteps} from './workflow-steps.mjs';
 import {verifierSchema,validateVerifiers} from './verification.mjs';
 import {workflowExecutionCompatibility,executionCapabilities} from './execution-capabilities.mjs';
 

@@ -1,6 +1,6 @@
 # Three applications through generated Hermo APIs
 
-Open `/examples.html` on your running Hermo instance. The workspace sidebar also links to **Integration lab**.
+Open `/examples.html` on your running Hermo instance.
 
 1. Create your private workspace password in Hermo, or unlock an existing workspace.
 2. In the lab, authorize creating the three local test integrations and choose **Build & verify APIs**.

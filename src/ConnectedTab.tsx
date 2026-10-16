@@ -1,4 +1,4 @@
-import React,{useEffect,useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {Copy,ExternalLink,Link2,Loader2} from 'lucide-react';
 type Request=(path:string,body?:unknown)=>Promise<any>;
 export function ConnectedTab({connectionId,request,onConnected,initiallyOpen=false}:{connectionId:string;request:Request;onConnected:(confirmed:boolean)=>Promise<void>;initiallyOpen?:boolean}){

@@ -99,3 +99,20 @@ test('shutdown flushes a real long poll and prevents queued dispatch before HTTP
     const reopened=openStore(f.dataDir);try{assert.equal(reopened.db.prepare('SELECT status FROM runs WHERE id=?').get(receipt.run_id).status,'queued','unstarted durable work is preserved for restart authorization checks');}finally{reopened.close();}
   }finally{await f.app.close();}
 });
+
+test('shutdown drains HTTP while managed browser cleanup is pending',{timeout:10000},async()=>{
+  let release,started=false,closes=0,settled=false;
+  const gate=new Promise(done=>{release=done;}),f=await fixture(49131,async()=>{},{closeAll:async()=>{closes++;started=true;await gate;}});
+  let closing;
+  try{
+    await f.app.listen({port:49131,host:'127.0.0.1'});
+    closing=f.app.close();closing.then(()=>{settled=true;},()=>{settled=true;});
+    await until(()=>started);
+    await until(()=>!f.app.server.listening,2000).catch(()=>assert.fail('HTTP listener must stop before managed browser cleanup finishes'));
+    assert.equal(settled,false,'close waits for browser cleanup after draining HTTP');
+    assert.equal(f.store.db.prepare('SELECT 1 AS value').get().value,1,'storage remains available until browser cleanup finishes');
+    release();await closing;
+    assert.equal(closes,1,'managed browser cleanup runs exactly once');
+    assert.throws(()=>f.store.db.prepare('SELECT 1'),/not open|closed/i,'shutdown closes storage after browser cleanup');
+  }finally{release();await (closing??f.app.close());}
+});

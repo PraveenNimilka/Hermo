@@ -129,16 +129,3 @@ export function workflowExecutionCompatibility(connection,definition,config,opti
   }
   return {compatible:errors.length===0,execution_mode:bound.mode,requires_test:true,errors,warnings};
 }
-
-export function executionConfigHash(config){
-  const value=configSchema.parse(config);
-  return digest({...value,allowed_origins:[...value.allowed_origins].sort(),allowed_actions:[...value.allowed_actions].sort()});
-}
-
-/** Bind verification to both content and mode; never reuse a connected-tab test for managed execution. */
-export function executionTestBinding(definition,config){return {definition_hash:digest(definition),execution_config_hash:executionConfigHash(config)};}
-export function isExecutionTestEvidenceValid(evidence,definition,config){
-  if(evidence?.status!=='succeeded')return false;
-  const binding=executionTestBinding(definition,config);
-  return evidence.definition_hash===binding.definition_hash&&evidence.execution_config_hash===binding.execution_config_hash;
-}

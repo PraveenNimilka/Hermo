@@ -19,13 +19,21 @@ test('default companion survives forced worker restart and stops delayed actions
     context=await chromium.launchPersistentContext('',{headless:true,chromiumSandbox:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--enable-unsafe-extension-debugging'],ignoreDefaultArgs:['--disable-extensions']});
     const cdp=await context.browser().newBrowserCDPSession(),{id:extensionId}=await cdp.send('Extensions.loadUnpacked',{path:resolve('companion/browser')});
     const evaluate=async(targetId,expression)=>{const {sessionId}=await cdp.send('Target.attachToTarget',{targetId,flatten:false});try{return await new Promise((resolve,reject)=>{const listener=e=>{if(e.sessionId!==sessionId)return;const data=JSON.parse(e.message);if(data.id!==73)return;clearTimeout(timer);cdp.off('Target.receivedMessageFromTarget',listener);if(data.error||data.result?.exceptionDetails)reject(Error(JSON.stringify(data)));else resolve(data.result.result.value);};const timer=setTimeout(()=>{cdp.off('Target.receivedMessageFromTarget',listener);reject(Error('Extension evaluation timeout'));},15000);cdp.on('Target.receivedMessageFromTarget',listener);cdp.send('Target.sendMessageToTarget',{sessionId,message:JSON.stringify({id:73,method:'Runtime.evaluate',params:{expression,awaitPromise:true,returnByValue:true}})}).catch(reject);});}finally{await cdp.send('Target.detachFromTarget',{sessionId}).catch(()=>{});}};
+    const readyPopup=async()=>{
+      for(let n=0;n<100;n++){
+        const popup=(await cdp.send('Target.getTargets')).targetInfos.find(target=>target.url.endsWith('/popup.html'));
+        if(popup&&await evaluate(popup.targetId,"document.documentElement?.dataset.hermoReady==='true'"))return popup;
+        await new Promise(done=>setTimeout(done,100));
+      }
+      assert.fail('Companion popup did not finish initializing');
+    };
     const site=await context.newPage();await site.goto(origin+'/sandbox/weather');
     const link=()=>ok(`/studio/connections/${connection.id}/browser-link`);
     const pair=async()=>{
       await site.bringToFront();const grant=await ok(`/studio/connections/${connection.id}/browser-link`,{authorized:true});
       const tab=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(t=>t.url===site.url());assert.ok(tab);
-      await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:tab.targetId});await new Promise(done=>setTimeout(done,500));
-      const popup=(await cdp.send('Target.getTargets')).targetInfos.find(t=>t.url.endsWith('/popup.html'));assert.ok(popup);
+      await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:tab.targetId});
+      const popup=await readyPopup();
       await evaluate(popup.targetId,`document.querySelector('#workspace').value=${JSON.stringify(origin)};document.querySelector('#code').value=${JSON.stringify(grant.code)};document.querySelector('#authorize').checked=true;document.querySelector('#pair').requestSubmit();true`);
       for(let n=0;n<100;n++){if((await link()).linked)break;await new Promise(done=>setTimeout(done,100));}
       assert.equal((await link()).linked,true,await evaluate(popup.targetId,"document.querySelector('#status').textContent"));
@@ -99,20 +107,29 @@ test('default companion survives forced worker restart and stops delayed actions
     let pending;
     for(let n=0;n<40;n++){pending=(await evaluate(worker.targetId,'chrome.storage.session.get("hermoScopedBrowserSessions")')).hermoScopedBrowserSessions?.[0]?.inFlight;if(pending)break;await new Promise(done=>setTimeout(done,50));}
     assert.ok(pending,'in-flight marker is durable before browser operation');
+    await evaluate(worker.targetId,'globalThis.hermoTransportInterruptedWorker=true;true');
     const swUnknown=await context.newCDPSession(site),unknownVersions=new Map();
     swUnknown.on('ServiceWorker.workerVersionUpdated',({versions:updated})=>{for(const value of updated)unknownVersions.set(value.versionId,value);});await swUnknown.send('ServiceWorker.enable');
     for(let n=0;n<40&&!Array.from(unknownVersions.values()).some(value=>value.scriptURL===worker.url&&value.status==='activated');n++)await new Promise(done=>setTimeout(done,100));
     const unknownVersion=Array.from(unknownVersions.values()).filter(value=>value.scriptURL===worker.url&&value.status==='activated').at(-1);assert.ok(unknownVersion);
     await swUnknown.send('ServiceWorker.stopWorker',{versionId:unknownVersion.versionId});await swUnknown.detach();
+    for(let n=0;n<40;n++){if(!(await cdp.send('Target.getTargets')).targetInfos.some(target=>target.targetId===worker.targetId))break;await new Promise(done=>setTimeout(done,100));}
+    assert.equal((await cdp.send('Target.getTargets')).targetInfos.some(target=>target.targetId===worker.targetId),false,'the uncertain worker was terminated');
     await site.locator('#delayed-submit').evaluate(button=>{button.disabled=false;});await site.bringToFront();
     const wakeTab=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(value=>value.url===site.url());
-    await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:wakeTab.targetId});await new Promise(done=>setTimeout(done,500));
-    const wakePopup=(await cdp.send('Target.getTargets')).targetInfos.find(value=>value.url.endsWith('/popup.html'));assert.ok(wakePopup);
-    await evaluate(wakePopup.targetId,'chrome.runtime.sendMessage({type:"hermo.recovery.probe"}).catch(()=>{});true');
+    // Opening the production popup wakes the worker; recovery may dismiss it again.
+    await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:wakeTab.targetId});
     for(let n=0;n<80;n++){if(!(await link()).linked)break;await new Promise(done=>setTimeout(done,100));}
     assert.equal((await link()).linked,false,'unknown in-flight recovery never restores execution authority');assert.ok((await uncertainOperation).status>=400);
+    const recoveredWorker=(await cdp.send('Target.getTargets')).targetInfos.find(target=>target.type==='service_worker'&&target.url.endsWith('/background.mjs'));
+    assert.ok(recoveredWorker,'the production popup woke the worker');
+    // Chrome can reuse the target ID after restart; execution globals must be fresh.
+    assert.equal(await evaluate(recoveredWorker.targetId,'typeof globalThis.hermoTransportInterruptedWorker'), 'undefined','recovery uses a fresh worker execution context');
+    assert.deepEqual((await evaluate(recoveredWorker.targetId,'chrome.storage.session.get("hermoScopedBrowserSessions")')).hermoScopedBrowserSessions,[],'uncertain recovery clears durable execution authority');
     await new Promise(done=>setTimeout(done,250));assert.equal(await site.evaluate(()=>window.hermoSyntheticSubmissions),0,'unknown in-flight click was never repeated');
-    await cdp.send('Target.closeTarget',{targetId:wakePopup.targetId});
+    // Chrome may dismiss the popup when the website regains focus during the checks above.
+    const wakePopup=(await cdp.send('Target.getTargets')).targetInfos.find(target=>target.url.endsWith('/popup.html'));
+    if(wakePopup)await cdp.send('Target.closeTarget',{targetId:wakePopup.targetId});
     await pair();await site.goto(origin+'/outside-scope');for(let n=0;n<40;n++){if(!(await link()).linked)break;await new Promise(done=>setTimeout(done,100));}assert.equal((await link()).linked,false,'leaving sandbox path ends access');
     await site.goto(origin+'/sandbox/weather');await pair();await ok('/studio/logout',{});await new Promise(done=>setTimeout(done,1000));
     const finalWorker=(await cdp.send('Target.getTargets')).targetInfos.find(value=>value.type==='service_worker'&&value.url.endsWith('/background.mjs'));assert.ok(finalWorker);

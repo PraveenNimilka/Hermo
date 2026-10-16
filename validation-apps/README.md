@@ -54,7 +54,9 @@ The default app configuration expects these example **workflow contracts**, not 
 
 The product explorer, change detector and reliability lab default to the catalog workflow. The JSON explorer, MCP client and records dashboard default to quotes. Change the endpoint and JSON inputs to use a different compatible published workflow. Load its contract to discover the actual schema; the runtime remains the authority for input, permissions and output verification.
 
-See the repository's `REAL-WORLD-VALIDATION.md` for actual executed workflows, timestamps, revision/run IDs, failure cases and remaining acceptance limitations. A running UI alone is not live-site acceptance evidence.
+See [Contributing](../CONTRIBUTING.md#external-website-checks) to run external
+website and consumer UI checks with disposable state. A running UI alone does
+not establish live-site compatibility.
 
 ## Application behavior
 

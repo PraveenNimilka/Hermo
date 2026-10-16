@@ -29,6 +29,21 @@ test('runtime health and execution evidence remain readable, neutral and respons
     const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
     await context.addCookies([{name:'hermo_owner_'+port,value:cookie.split('=')[1],url:origin+'/studio',httpOnly:true,sameSite:'Strict'}]);
     const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+    await page.addInitScript(()=>{
+      const NativeResizeObserver=window.ResizeObserver,pending=new Map();let paused=false;
+      window.chartResizeTest={
+        pause:()=>{paused=true;},
+        get pending(){return pending.size;},
+        resume:()=>{paused=false;for(const [observer,{callback,entries}] of pending)callback(entries,observer);pending.clear();}
+      };
+      window.ResizeObserver=class extends NativeResizeObserver{
+        constructor(callback){super((entries,observer)=>{
+          if(paused&&entries.some(entry=>entry.target.classList.contains('recharts-responsive-container'))){pending.set(observer,{callback,entries});return;}
+          callback(entries,observer);
+        });}
+        disconnect(){pending.delete(this);super.disconnect();}
+      };
+    });
     async function usable(label){
       const state=await page.evaluate(()=>{
         const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden';};
@@ -37,6 +52,19 @@ test('runtime health and execution evidence remain readable, neutral and respons
       });assert.equal(state.overflow,false,label);assert.deepEqual(state.colored,[],label);assert.deepEqual(state.clipped,[],label);
     }
     await page.goto(origin);await page.getByRole('heading',{name:'Local runtime is running'}).waitFor();
+    const chartMeasured=()=>{
+      const viewport=document.querySelector('.activity-chart .recharts-responsive-container'),svg=viewport?.querySelector('svg');
+      return svg&&viewport.clientWidth>0&&Math.abs(svg.getBoundingClientRect().width-viewport.clientWidth)<=1;
+    };
+    await page.waitForFunction(chartMeasured);
+    // A delayed resize callback must not let a desktop SVG widen the mobile page.
+    await page.evaluate(()=>window.chartResizeTest.pause());
+    await page.setViewportSize({width:375,height:1000});
+    await page.waitForFunction(()=>window.chartResizeTest.pending>0);
+    assert.ok(await page.locator('.recharts-surface').evaluate(svg=>svg.getBoundingClientRect().width>innerWidth),'chart measurement is still at desktop width');
+    await usable('mobile while chart resize is pending');
+    await page.evaluate(()=>window.chartResizeTest.resume());
+    await page.waitForFunction(chartMeasured);
     for(const width of [1440,768,375]){
       await page.setViewportSize({width,height:1000});await usable('health at '+width);
       await page.screenshot({path:join(dataDir,'overview-'+width+'.png'),fullPage:true});
@@ -51,6 +79,14 @@ test('runtime health and execution evidence remain readable, neutral and respons
         await dialog.getByRole('button',{name:'Close dialog',exact:true}).click();
       }
     }
+    await page.waitForFunction(chartMeasured);
+    await page.locator('.recharts-line-dot').last().hover();
+    const tooltip=page.locator('.recharts-tooltip-wrapper');await tooltip.waitFor({state:'visible'});
+    const chartBounds=await page.locator('.recharts-responsive-container').boundingBox(),tooltipBounds=await tooltip.boundingBox();
+    assert.ok(chartBounds&&tooltipBounds&&tooltipBounds.x>=chartBounds.x-1&&tooltipBounds.y>=chartBounds.y-1&&tooltipBounds.x+tooltipBounds.width<=chartBounds.x+chartBounds.width+1&&tooltipBounds.y+tooltipBounds.height<=chartBounds.y+chartBounds.height+1,'mobile tooltip stays inside the chart viewport');
+    await page.getByText('View activity data',{exact:true}).click();
+    assert.equal(await page.locator('.chart-data tbody tr').count(),7);
+    await usable('expanded activity data at 375');
     // A failed overview poll must change the process indicator without replacing old data with false readiness.
     await page.route('**/studio/overview*',route=>route.abort());
     await page.getByRole('heading',{name:'Local runtime is unreachable'}).waitFor({timeout:10000});

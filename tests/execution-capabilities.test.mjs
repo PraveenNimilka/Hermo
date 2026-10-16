@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {executionCapabilities,normalizeExecutionConfig,validateExecutionConfig,workflowExecutionCompatibility,executionConfigHash,executionTestBinding,isExecutionTestEvidenceValid} from '../server/execution-capabilities.mjs';
+import {executionCapabilities,normalizeExecutionConfig,validateExecutionConfig,workflowExecutionCompatibility} from '../server/execution-capabilities.mjs';
 
 const options={sandboxOrigin:'http://127.0.0.1:4488'};
 const connection={id:'conn_fixture',url:'https://shop.example/catalog/',origins:['https://shop.example','https://assets.example'],access:'public',browser_mode:'isolated'};
@@ -73,16 +73,4 @@ test('frame and scalar extraction support matches current adapters',()=>{
   assert.equal(report({required_capabilities:['javascript.evaluate']}).errors[0].code,'CAPABILITY_NOT_SUPPORTED');
   assert.equal(report({required_capabilities:'frames'}).errors[0].code,'INVALID_CAPABILITIES');
   for(const outputs of [[null],[false],[{name:'result',selector:17}],[]])assert.equal(report({outputs}).compatible,false);
-});
-
-test('test evidence binds exact definition, execution mode and connection without relying on key order',()=>{
-  const config=normalizeExecutionConfig(connection,options),binding=executionTestBinding(definition,config),evidence={status:'succeeded',...binding};
-  assert.equal(isExecutionTestEvidenceValid(evidence,definition,config),true);
-  assert.equal(isExecutionTestEvidenceValid({...evidence,status:'failed'},definition,config),false);
-  assert.equal(isExecutionTestEvidenceValid(evidence,{...definition,timeout_ms:10000},config),false);
-  const chrome=normalizeExecutionConfig({...connection,browser_mode:'connected'},options);
-  assert.equal(isExecutionTestEvidenceValid(evidence,definition,chrome),false);
-  assert.equal(isExecutionTestEvidenceValid(evidence,definition,{...config,connection_id:'other'}),false);
-  assert.equal(executionConfigHash(config),executionConfigHash({...config,allowed_origins:[...config.allowed_origins].reverse(),allowed_actions:[...config.allowed_actions].reverse()}));
-  assert.deepEqual(workflowExecutionCompatibility(connection,definition,config,options),workflowExecutionCompatibility(connection,definition,config,options));
 });

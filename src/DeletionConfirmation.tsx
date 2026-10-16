@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const deletionPhrase = (name:string) => `Delete "${name}"`;
 
 export function DeletionConfirmation({name,value,onChange,disabled=false}:{name:string;value:string;onChange:(value:string)=>void;disabled?:boolean}) {

@@ -3,7 +3,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronRight, Circle, Code2, Copy, Globe2, KeyRound, LayoutDashboard, Loader2, LockKeyhole, LogOut, MoreHorizontal, Pause, Play, Plus, RefreshCw, ShieldCheck, Sparkles, Unplug, Workflow as WorkflowIcon, X, Zap, Activity, Fingerprint, Monitor, MousePointer2, Search, Settings2 } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronRight, Circle, Code2, Copy, Globe2, KeyRound, LayoutDashboard, Loader2, LockKeyhole, LogOut, Pause, Play, Plus, RefreshCw, ShieldCheck, Unplug, Workflow as WorkflowIcon, X, Zap, Activity, Fingerprint, Monitor, MousePointer2, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import './styles.css';
 import './design.css';

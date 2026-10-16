@@ -5,8 +5,8 @@ explicit and preserve public endpoint identities, scoped keys and persisted data
 
 Use Node.js 24 or later. Run `npm ci`, `npm run build`, `npm test` and
 `npm run test:consumers`. Browser integration tests need a supported local Chrome
-or Playwright Chromium installation. See the README for installation and platform
-requirements. Tests create disposable state under ignored `work/` directories.
+or Playwright Chromium installation. See the [installation guide](docs/installation.md)
+for platform requirements. Tests create disposable state under ignored `work/` directories.
 
 Do not use an existing owner's data directory for tests. Never commit `.hermo/`,
 environment files, credentials, cookie exports, databases or API keys. Examples
@@ -17,8 +17,26 @@ For interface changes, preserve the shared neutral design tokens, visible focus,
 keyboard operation, meaningful labels, responsive spacing and reduced motion.
 Verify both desktop and narrow layouts, including successful and failed requests.
 
-External acceptance testing is explicit: `npm run test:real-world` performs a
-small, bounded set of read-only requests against the scraping-practice sites
-listed in REAL-WORLD-VALIDATION.md. Review their current rules before running it.
-Never point fault-injection, crash tests or load tests at someone else's account
-or browser. Local regression fixtures are labelled separately from live evidence.
+## External website checks
+
+External checks are opt-in. They use read-only catalog and quote pages from
+[Books to Scrape](https://books.toscrape.com/) and
+[Quotes to Scrape](https://quotes.toscrape.com/). Review the operator's current
+[practice-site rules](https://toscrape.com/) before running them.
+
+- `npm run test:public` checks the built-in public examples and scoped APIs.
+- `npm run test:real-world` checks structured workflows, REST/MCP, revisions and
+  runtime restart using disposable state.
+- `node scripts/verify-connected-public.mjs` checks actual companion pairing and
+  published execution against an authorized public tab.
+
+For consumer UI checks, run `node scripts/verify-real-world.mjs --keep-running`,
+then pass its printed private configuration path to
+`node scripts/verify-consumer-apps.mjs <configuration-path>` in another terminal.
+Stop the retained harness when finished. Configuration contains disposable
+credentials and stays under ignored `work/`; generated reports and screenshots
+stay under ignored `validation/` or `PUBLIC-INTEGRATION-VALIDATION.json`.
+
+These checks depend on network and website availability. Local fixture tests
+do not establish live account compatibility. Never point fault-injection,
+crash tests or load tests at someone else's account or browser.
