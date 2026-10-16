@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Hermo · connect this browser tab",
+  "version": "0.7.0",
+  "minimum_chrome_version": "120",
+  "description": "Explicitly connect one selected website tab to local Hermo. No cookie access, profile copying or remote service.",
+  "permissions": ["activeTab", "scripting", "storage", "alarms", "tabCapture", "offscreen"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "icons": {"128": "hermo-crab.png"},
+  "action": {"default_popup": "popup.html", "default_title": "Hermo · connect this tab", "default_icon": {"128": "hermo-crab.png"}},
+  "background": {"service_worker": "background.mjs", "type": "module"},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; connect-src http://127.0.0.1:*; style-src 'self'"}
+}

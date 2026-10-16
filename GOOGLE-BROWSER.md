@@ -1,0 +1,40 @@
+# Private Google browser sign-in
+
+Hermo can save a Google **website session** encrypted on this device and explicitly reuse it in another connection's isolated browser. Google workspace OAuth is separate: it unlocks Hermo but does not create website cookies or a Chrome Sync profile.
+
+## Set up and reuse
+
+If Google says **This browser or app may not be secure**, use **Privacy → Normal Chrome sign-in**. This opens a dedicated, ordinary Chrome profile without Playwright or remote debugging. Confirm your workspace password locally, sign in personally in the new window, then use the included local companion to explicitly copy its Google cookies into Hermo. The ten-minute import code is one-use and stops working after workspace lock or server restart. Follow `/normal-chrome.html` on the main app for installation. Google can still reject the browser or reused session; this is not a permanent-access guarantee.
+
+The companion requests cookie access for only the reviewed Google hosts when you choose transfer. It has no background script, website content script, remote endpoint or token storage. It does not copy passwords, other website sessions, local storage, IndexedDB or Chrome Sync. Google cookies can represent multiple accounts: use the dedicated Chrome profile for the account you intend to connect. Normal Chrome uses its ordinary network and Chromium-managed profile storage during manual sign-in; it does not use Hermo's proxy, and locking Hermo does not close that ordinary Chrome window or erase its cookies.
+
+1. Refresh `http://127.0.0.1:4318/`, unlock, and open **Privacy → Your Google browser sign-in**.
+2. Name the sign-in, review the eight exact Google service origins, check your authorization, and choose **Set up private Google browser**. The login page opens directly. **Continue setup** resumes an unfinished setup.
+3. Choose **Open desktop browser** and sign in personally. Complete any MFA or verification yourself. Hermo does not enter your credentials or solve challenges.
+4. When Google shows your signed-in account, choose **Refresh preview**. Open Google's account menu if needed, select the visible email address under **Account marker**, and choose **Save encrypted Google sign-in**. A login, error, verification, or Google marketing page cannot be saved as a profile.
+5. In **Connect app**, choose your saved **Google browser sign-in**. For an existing connection, expand **Google sign-in in this private browser**, choose the saved sign-in, and select **Use saved Google sign-in**.
+6. Complete the target website's own sign-in. **Return to app** returns to its entry page. Refresh the preview, confirm the target website's account marker, then test and publish its actions again.
+
+For a Google redirect blocked in an existing ChatGPT connection, expand **Review Google sign-in and display services**, review and approve the listed exact domains, and retry that Google tab. A Google sign-in saved in a different connection does not silently grant this connection access. Unapproved origins remain blocked deliberately.
+
+## Preview and permissions
+
+There is no 2.5-second browser-preview polling. Hermo captures the preview after its own interactions and after **Refresh preview**. **Reload website** and **Retry this tab** explicitly navigate; refreshing the preview does not. Changes made directly in the desktop browser appear after a manual preview refresh.
+
+Each preview request reconciles the active browser's policy with that connection's persisted approvals. This does not approve additional services. The browser and authenticated egress proxy both enforce exact origins and public-IP rules. A preview failure is distinct from an actually closed browser; the latter offers explicit reopening.
+
+The anonymous Google form can load with an unapproved background `content-autofill.googleapis.com` connection in diagnostics. The final check reached **Email or phone**, HTTP 200, with no failed transport requests. Approving unrelated services is not needed to make that form display.
+
+## Storage and removal
+
+Up to five saved sign-ins are supported. Only cookies scoped to the reviewed Google hosts and storage from exact reviewed origins enter the reusable profile. Cookies, local storage and IndexedDB are encrypted server-side; profile responses expose names and timestamps only. Profiles are excluded from workspace exports, audit details and logs.
+
+Applying a profile creates a draft browser session. Published API execution continues to use a separately confirmed target account. Applying or removing a sign-in revokes affected API keys and requires reconnection/retesting. **Remove sign-in** deletes Hermo's saved profile and clears dependent connection states; it does not remotely log you out of Google on other devices. Disconnecting an individual app does not remove the independently saved Google profile.
+
+Credentials are not imported from your everyday Chrome profile, and Chrome Sync is not enabled. Server restart can restore explicitly saved sessions; unsaved sign-in progress is only in memory. Google can expire or reject sessions. This is still an automation-controlled browser, not a certification that a human is browsing.
+
+Google explains its [supported-browser restrictions](https://support.google.com/accounts/answer/7675428?hl=en). Playwright documents [authenticated-state reuse](https://playwright.dev/docs/auth). A persistent session cannot guarantee that Google, ChatGPT, Claude, or another provider will accept the browser or remove verification. A search engine choice does not change those rules.
+
+## Validation
+
+The 39-test regression suite covers profile filtering, owner/CSRF boundaries, encrypted restart persistence, rejection of incorrect markers and challenge pages, public-session isolation, separate draft/confirmed state, stale permission synchronization, dependent-key revocation, manual browser interaction and desktop recovery. The companion's four tests additionally cover permission denial, local-only transport, filtered cookie payloads, encrypted import, one-use codes, expiry and locking. Google account credentials in these tests are synthetic. The real anonymous login-page check and UI inspection establish page reachability, not completion of a personal Google login. The operator reported that Google refused authentication in the automated browser; actual normal-Chrome login and extension acceptance remain unverified. See `CURRENT-VALIDATION.md` and `GOOGLE-PRIVATE-BROWSER-CHECK.json`.

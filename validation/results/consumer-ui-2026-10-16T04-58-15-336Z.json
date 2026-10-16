@@ -1,0 +1,224 @@
+{
+  "tested_at": "2026-10-16T04:58:15.336Z",
+  "kind": "live-consumer-UI",
+  "runtime": "http://127.0.0.1:54305",
+  "applications": [
+    {
+      "app": "change-detector",
+      "status": "passed",
+      "runs": [
+        {
+          "id": "run_f29e48f5123fa210af795a95",
+          "status": "succeeded",
+          "workflow_id": "wf_1e8a23ff561ed637e4b01ac9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:15.881Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:22.189Z",
+            "observed_at": "2026-10-16T04:58:22.189Z",
+            "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "category_matches_category",
+              "products_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 153,
+          "execution_ms": 6162,
+          "record_count": 11
+        },
+        {
+          "id": "run_8bfa7f27771956f1fabcfaf5",
+          "status": "succeeded",
+          "workflow_id": "wf_1e8a23ff561ed637e4b01ac9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:23.191Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:28.800Z",
+            "observed_at": "2026-10-16T04:58:28.800Z",
+            "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "category_matches_category",
+              "products_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 17,
+          "execution_ms": 5599,
+          "record_count": 11
+        }
+      ],
+      "screenshots": {
+        "desktop": "validation/evidence/change-detector-desktop.png",
+        "mobile": "validation/evidence/change-detector-mobile.png"
+      },
+      "page_errors": []
+    },
+    {
+      "app": "json-explorer",
+      "status": "passed",
+      "runs": [
+        {
+          "id": "run_46f109e50ec4c56dc39a956e",
+          "status": "succeeded",
+          "workflow_id": "wf_a3e0f7285ccfc456410b7fe9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:29.616Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:32.907Z",
+            "observed_at": "2026-10-16T04:58:32.907Z",
+            "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "page_matches_page",
+              "quotes_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 27,
+          "execution_ms": 3271,
+          "record_count": 10
+        }
+      ],
+      "screenshots": {
+        "desktop": "validation/evidence/json-explorer-desktop.png",
+        "mobile": "validation/evidence/json-explorer-mobile.png"
+      },
+      "page_errors": []
+    },
+    {
+      "app": "mcp-tools",
+      "status": "passed",
+      "runs": [
+        {
+          "id": "run_dcef30a12bee161cce2631b1",
+          "status": "succeeded",
+          "workflow_id": "wf_a3e0f7285ccfc456410b7fe9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:33.736Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:37.298Z",
+            "observed_at": "2026-10-16T04:58:37.298Z",
+            "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "page_matches_page",
+              "quotes_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 235,
+          "execution_ms": 3338,
+          "record_count": 10
+        }
+      ],
+      "screenshots": {
+        "desktop": "validation/evidence/mcp-tools-desktop.png",
+        "mobile": "validation/evidence/mcp-tools-mobile.png"
+      },
+      "page_errors": []
+    },
+    {
+      "app": "website-dashboard",
+      "status": "passed",
+      "runs": [
+        {
+          "id": "run_0d52cb787aa2e13a10c4dbd0",
+          "status": "succeeded",
+          "workflow_id": "wf_a3e0f7285ccfc456410b7fe9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:37.759Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:41.051Z",
+            "observed_at": "2026-10-16T04:58:41.051Z",
+            "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "page_matches_page",
+              "quotes_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 30,
+          "execution_ms": 3271,
+          "record_count": 10
+        }
+      ],
+      "screenshots": {
+        "desktop": "validation/evidence/website-dashboard-desktop.png",
+        "mobile": "validation/evidence/website-dashboard-mobile.png"
+      },
+      "page_errors": []
+    },
+    {
+      "app": "reliability-lab",
+      "status": "passed",
+      "runs": [
+        {
+          "id": "run_0b2700d240d0ab19cbee0e7e",
+          "status": "succeeded",
+          "workflow_id": "wf_1e8a23ff561ed637e4b01ac9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:41.803Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:47.424Z",
+            "observed_at": "2026-10-16T04:58:47.424Z",
+            "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "category_matches_category",
+              "products_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 104,
+          "execution_ms": 5523,
+          "record_count": 11
+        },
+        {
+          "id": "run_f437632da04d9a233e4601cb",
+          "status": "succeeded",
+          "workflow_id": "wf_1e8a23ff561ed637e4b01ac9",
+          "revision": 1,
+          "execution_mode": "managed_local",
+          "created_at": "2026-10-16T04:58:43.305Z",
+          "verification": {
+            "verified_at": "2026-10-16T04:58:53.251Z",
+            "observed_at": "2026-10-16T04:58:53.251Z",
+            "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+            "checks": [
+              "public_source_origin",
+              "nonempty_outputs",
+              "category_matches_category",
+              "products_nonempty",
+              "output_schema"
+            ]
+          },
+          "queue_duration_ms": 4203,
+          "execution_ms": 5750,
+          "record_count": 11
+        }
+      ],
+      "screenshots": {
+        "desktop": "validation/evidence/reliability-lab-desktop.png",
+        "mobile": "validation/evidence/reliability-lab-mobile.png"
+      },
+      "page_errors": []
+    }
+  ],
+  "completed_at": "2026-10-16T04:58:54.463Z"
+}

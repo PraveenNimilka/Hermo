@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.hermo/
+*.log
+test-results/
+.env
+.env.*
+!.env.example
+.vercel/
+*.zip
+screenshots/
+*.sqlite*
+*.dpapi
+*.pem
+*.key
+work/
+
+# Local coding-agent tools and downloaded design guidance
+.agents/
+.codex/

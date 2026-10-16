@@ -1,0 +1,12 @@
+{
+  "tested_at": "2026-10-16T04:51:03.938Z",
+  "kind": "live-external-websites",
+  "runtime": "http://127.0.0.1:4346",
+  "site_rules": "https://toscrape.com/",
+  "applications": [],
+  "checks": [],
+  "limitations": [],
+  "failure": {
+    "message": "{\"path\":\"/studio/setup\",\"status\":409,\"value\":{\"error\":{\"code\":\"ALREADY_CONFIGURED\",\"message\":\"This workspace already has an owner.\"}}}"
+  }
+}

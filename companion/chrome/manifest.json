@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Hermo · local Google sign-in companion",
+  "version": "0.1.1",
+  "description": "Explicitly transfer your chosen Google session to your local Hermo workspace. No background collection or remote service.",
+  "host_permissions": ["http://127.0.0.1/*"],
+  "optional_permissions": ["cookies"],
+  "optional_host_permissions": ["https://google.com/*", "https://accounts.google.com/*", "https://myaccount.google.com/*", "https://www.google.com/*", "https://www.gstatic.com/*", "https://ssl.gstatic.com/*", "https://fonts.googleapis.com/*", "https://fonts.gstatic.com/*", "https://lh3.googleusercontent.com/*"],
+  "action": {"default_popup": "popup.html"},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; connect-src http://127.0.0.1:*; style-src 'self'"}
+}

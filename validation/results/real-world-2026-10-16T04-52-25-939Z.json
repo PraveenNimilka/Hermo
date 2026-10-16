@@ -1,0 +1,1077 @@
+{
+  "tested_at": "2026-10-16T04:52:25.951Z",
+  "kind": "live-external-websites",
+  "runtime": "http://127.0.0.1:54305",
+  "site_rules": "https://toscrape.com/",
+  "applications": [],
+  "checks": [
+    {
+      "label": "validation.products owner test",
+      "id": "run_489cafda7717da5ff2722d68",
+      "status": "succeeded",
+      "revision": null,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:52:34.173Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:52:40.281Z",
+        "observed_at": "2026-10-16T04:52:40.281Z",
+        "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "category_matches_category",
+          "products_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 115,
+      "duration_ms": 6116,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:52:37.121Z",
+          "finished_at": "2026-10-16T04:52:38.911Z",
+          "duration_ms": 1790
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:52:38.911Z",
+          "finished_at": "2026-10-16T04:52:38.936Z",
+          "duration_ms": 25
+        }
+      ]
+    },
+    {
+      "label": "validation.quotes owner test",
+      "id": "run_df650883a6ce5c5e7d1987f1",
+      "status": "succeeded",
+      "revision": null,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:52:44.984Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:52:48.311Z",
+        "observed_at": "2026-10-16T04:52:48.311Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 60,
+      "duration_ms": 3335,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:52:46.221Z",
+          "finished_at": "2026-10-16T04:52:46.992Z",
+          "duration_ms": 771
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:52:46.994Z",
+          "finished_at": "2026-10-16T04:52:47.012Z",
+          "duration_ms": 18
+        }
+      ]
+    },
+    {
+      "label": "products travel",
+      "id": "run_8c4897c3080f04eb3ed2e650",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:52:48.796Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:52:54.402Z",
+        "observed_at": "2026-10-16T04:52:54.402Z",
+        "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "category_matches_category",
+          "products_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 95,
+      "duration_ms": 5613,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:52:51.350Z",
+          "finished_at": "2026-10-16T04:52:53.034Z",
+          "duration_ms": 1684
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:52:53.036Z",
+          "finished_at": "2026-10-16T04:52:53.062Z",
+          "duration_ms": 26
+        }
+      ]
+    },
+    {
+      "label": "products mystery",
+      "id": "run_cb42f062da2222df956c160a",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:52:54.912Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:00.507Z",
+        "observed_at": "2026-10-16T04:53:00.507Z",
+        "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "category_matches_category",
+          "products_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 156,
+      "duration_ms": 5603,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:52:57.573Z",
+          "finished_at": "2026-10-16T04:52:59.112Z",
+          "duration_ms": 1539
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:52:59.115Z",
+          "finished_at": "2026-10-16T04:52:59.140Z",
+          "duration_ms": 25
+        }
+      ]
+    },
+    {
+      "label": "quotes page 1",
+      "id": "run_f2b0126b593342e4c286a5bf",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:00.979Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:04.066Z",
+        "observed_at": "2026-10-16T04:53:04.066Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 24,
+      "duration_ms": 3096,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:02.216Z",
+          "finished_at": "2026-10-16T04:53:02.721Z",
+          "duration_ms": 505
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:02.723Z",
+          "finished_at": "2026-10-16T04:53:02.746Z",
+          "duration_ms": 23
+        }
+      ]
+    },
+    {
+      "label": "quotes page 2",
+      "id": "run_66328012c2616cc8a45d80fb",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:04.790Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:07.847Z",
+        "observed_at": "2026-10-16T04:53:07.847Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 58,
+      "duration_ms": 3067,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:06.009Z",
+          "finished_at": "2026-10-16T04:53:06.509Z",
+          "duration_ms": 500
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:06.511Z",
+          "finished_at": "2026-10-16T04:53:06.532Z",
+          "duration_ms": 21
+        }
+      ]
+    },
+    {
+      "label": "change detector unchanged observation",
+      "id": "run_ba0bf4a42e11389b36af321e",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:08.600Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:14.548Z",
+        "observed_at": "2026-10-16T04:53:14.548Z",
+        "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "category_matches_category",
+          "products_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 90,
+      "duration_ms": 5958,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:11.415Z",
+          "finished_at": "2026-10-16T04:53:13.177Z",
+          "duration_ms": 1762
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:13.178Z",
+          "finished_at": "2026-10-16T04:53:13.200Z",
+          "duration_ms": 22
+        }
+      ]
+    },
+    {
+      "label": "invalid input",
+      "http_status": 400,
+      "error": {
+        "code": "INVALID_REQUEST",
+        "message": "Check the required fields and try again."
+      }
+    },
+    {
+      "label": "invalid key",
+      "http_status": 401,
+      "error": {
+        "code": "UNAUTHORIZED",
+        "message": "A valid scoped Hermo API key is required."
+      }
+    },
+    {
+      "label": "wrong scope",
+      "http_status": 403,
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "This key does not authorize that action."
+      }
+    },
+    {
+      "label": "missing record",
+      "id": "run_b99f62308bbbd711b6d4a3bc",
+      "status": "failed",
+      "revision": 1,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:14.676Z",
+      "error": {
+        "code": "VERIFICATION_FAILED",
+        "category": "OUTPUT_VALIDATION_FAILED",
+        "cause_code": "VERIFICATION_FAILED",
+        "message": "The captured output did not pass its verification checks.",
+        "outcome": "unverified",
+        "requires_human": true,
+        "retry_safe": true,
+        "step": 1
+      },
+      "queue_duration_ms": 190,
+      "duration_ms": 3167,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "failed",
+          "started_at": "2026-10-16T04:53:17.361Z",
+          "finished_at": "2026-10-16T04:53:17.843Z",
+          "duration_ms": 482
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "skipped",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          }
+        }
+      ]
+    },
+    {
+      "label": "revoked key",
+      "http_status": 401,
+      "error": {
+        "code": "UNAUTHORIZED",
+        "message": "A valid scoped Hermo API key is required."
+      }
+    },
+    {
+      "label": "idempotent receipt",
+      "id": "run_c9ce10e6f7165d6080fc5836",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:18.487Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:31.630Z",
+        "observed_at": "2026-10-16T04:53:31.630Z",
+        "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "category_matches_category",
+          "products_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 236,
+      "duration_ms": 13151,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:23.342Z",
+          "finished_at": "2026-10-16T04:53:30.239Z",
+          "duration_ms": 6897
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:30.241Z",
+          "finished_at": "2026-10-16T04:53:30.262Z",
+          "duration_ms": 21
+        }
+      ]
+    },
+    {
+      "label": "bounded concurrent 0",
+      "id": "run_608766ea03ceefa111d51f98",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:32.205Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:35.298Z",
+        "observed_at": "2026-10-16T04:53:35.298Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 52,
+      "duration_ms": 3103,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:33.447Z",
+          "finished_at": "2026-10-16T04:53:33.962Z",
+          "duration_ms": 515
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:33.964Z",
+          "finished_at": "2026-10-16T04:53:33.983Z",
+          "duration_ms": 19
+        }
+      ]
+    },
+    {
+      "label": "bounded concurrent 1",
+      "id": "run_3bf8b4e974edb6bf3273bed7",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:32.209Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:38.402Z",
+        "observed_at": "2026-10-16T04:53:38.402Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 3140,
+      "duration_ms": 6202,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:36.545Z",
+          "finished_at": "2026-10-16T04:53:37.062Z",
+          "duration_ms": 517
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:37.063Z",
+          "finished_at": "2026-10-16T04:53:37.082Z",
+          "duration_ms": 19
+        }
+      ]
+    },
+    {
+      "label": "published stable during draft",
+      "id": "run_95e788a2d4d51b3526202764",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:39.065Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:42.493Z",
+        "observed_at": "2026-10-16T04:53:42.493Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 137,
+      "duration_ms": 3437,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:40.408Z",
+          "finished_at": "2026-10-16T04:53:41.154Z",
+          "duration_ms": 746
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:41.156Z",
+          "finished_at": "2026-10-16T04:53:41.176Z",
+          "duration_ms": 20
+        }
+      ]
+    },
+    {
+      "label": "edited real draft test",
+      "id": "run_67c9708888612c4a1f98e4be",
+      "status": "succeeded",
+      "revision": null,
+      "version": "66acf9e12debecb1ba86dddc673df8aeeb73dde1fdd9992afbd8fb3cf620eb6e",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:42.850Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:46.104Z",
+        "observed_at": "2026-10-16T04:53:46.104Z",
+        "verifier_version": "66acf9e12debecb1ba86dddc673df8aeeb73dde1fdd9992afbd8fb3cf620eb6e",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 204,
+      "duration_ms": 3262,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:44.237Z",
+          "finished_at": "2026-10-16T04:53:44.736Z",
+          "duration_ms": 499
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:44.738Z",
+          "finished_at": "2026-10-16T04:53:44.762Z",
+          "duration_ms": 24
+        }
+      ]
+    },
+    {
+      "label": "published revision 2",
+      "id": "run_9d106b048641d8c401609680",
+      "status": "succeeded",
+      "revision": 2,
+      "version": "66acf9e12debecb1ba86dddc673df8aeeb73dde1fdd9992afbd8fb3cf620eb6e",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:46.654Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:49.942Z",
+        "observed_at": "2026-10-16T04:53:49.942Z",
+        "verifier_version": "66acf9e12debecb1ba86dddc673df8aeeb73dde1fdd9992afbd8fb3cf620eb6e",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 249,
+      "duration_ms": 3296,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:48.112Z",
+          "finished_at": "2026-10-16T04:53:48.611Z",
+          "duration_ms": 499
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:48.611Z",
+          "finished_at": "2026-10-16T04:53:48.630Z",
+          "duration_ms": 19
+        }
+      ]
+    },
+    {
+      "label": "rollback revision 1",
+      "id": "run_3d9aff07ab315cf597804a3b",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:50.472Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:53:53.960Z",
+        "observed_at": "2026-10-16T04:53:53.960Z",
+        "verifier_version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "page_matches_page",
+          "quotes_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 246,
+      "duration_ms": 3496,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:51.891Z",
+          "finished_at": "2026-10-16T04:53:52.656Z",
+          "duration_ms": 765
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:52.657Z",
+          "finished_at": "2026-10-16T04:53:52.675Z",
+          "duration_ms": 18
+        }
+      ]
+    },
+    {
+      "label": "managed after process restart, no original browser",
+      "id": "run_f292a2492268e5c1f34a6e48",
+      "status": "succeeded",
+      "revision": 1,
+      "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+      "execution_mode": "managed_local",
+      "created_at": "2026-10-16T04:53:55.314Z",
+      "verification": {
+        "verified_at": "2026-10-16T04:54:01.260Z",
+        "observed_at": "2026-10-16T04:54:01.260Z",
+        "verifier_version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "checks": [
+          "public_source_origin",
+          "nonempty_outputs",
+          "category_matches_category",
+          "products_nonempty",
+          "output_schema"
+        ]
+      },
+      "queue_duration_ms": 250,
+      "duration_ms": 5956,
+      "steps": [
+        {
+          "number": 1,
+          "operation": "navigate",
+          "status": "succeeded",
+          "started_at": "2026-10-16T04:53:58.164Z",
+          "finished_at": "2026-10-16T04:53:59.895Z",
+          "duration_ms": 1731
+        },
+        {
+          "number": 2,
+          "operation": "wait_element",
+          "status": "succeeded",
+          "locator": {
+            "strategy": "recorded_selector",
+            "framed": false
+          },
+          "started_at": "2026-10-16T04:53:59.897Z",
+          "finished_at": "2026-10-16T04:53:59.924Z",
+          "duration_ms": 27
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Connected Chrome live external authorization, real model invocation and authenticated external managed session tests require separately authorized sessions; not claimed by this harness."
+  ],
+  "workflows": [
+    {
+      "id": "wf_1e8a23ff561ed637e4b01ac9",
+      "slug": "validation.products",
+      "template": "https://books.toscrape.com/catalogue/category/books/{category}/index.html",
+      "contract": {
+        "action": "validation.products",
+        "action_type": "read_data",
+        "inputs": [
+          "category"
+        ],
+        "outputs": [
+          {
+            "name": "category",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "products",
+            "type": "array",
+            "required": true,
+            "items": {
+              "type": "object",
+              "required": true,
+              "fields": [
+                {
+                  "name": "title",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "price",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "availability",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "url",
+                  "type": "url",
+                  "required": true,
+                  "read_attribute": "href"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": false
+                }
+              ]
+            },
+            "maxItems": 20
+          },
+          {
+            "name": "metadata",
+            "type": "object",
+            "required": true,
+            "fields": [
+              {
+                "name": "heading",
+                "type": "string",
+                "required": true
+              }
+            ]
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[A-Za-z0-9_-]{1,120}$",
+              "examples": [
+                "travel_2"
+              ]
+            }
+          },
+          "required": [
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "minLength": 1
+            },
+            "products": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "price": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "availability": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://",
+                    "description": "Absolute HTTP or HTTPS URL without credentials."
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "title",
+                  "price",
+                  "availability",
+                  "url"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 20
+            },
+            "metadata": {
+              "type": "object",
+              "properties": {
+                "heading": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "heading"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "category",
+            "products",
+            "metadata"
+          ],
+          "additionalProperties": false
+        },
+        "timeout_seconds": 45,
+        "version": "fcfc585dd4865d32074e8a60c473b9d82c6d28f8f57d2b7bd3bc3f5104035732",
+        "revision": 1
+      }
+    },
+    {
+      "id": "wf_a3e0f7285ccfc456410b7fe9",
+      "slug": "validation.quotes",
+      "template": "https://quotes.toscrape.com/page/{page}/",
+      "contract": {
+        "action": "validation.quotes",
+        "action_type": "read_data",
+        "inputs": [
+          "page"
+        ],
+        "outputs": [
+          {
+            "name": "page",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "quotes",
+            "type": "array",
+            "required": true,
+            "items": {
+              "type": "object",
+              "required": true,
+              "fields": [
+                {
+                  "name": "text",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "author",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "tags",
+                  "type": "array",
+                  "required": true,
+                  "items": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "minItems": 0,
+                  "maxItems": 20
+                },
+                {
+                  "name": "source",
+                  "type": "url",
+                  "required": false,
+                  "read_attribute": "href"
+                }
+              ]
+            },
+            "maxItems": 10
+          },
+          {
+            "name": "metadata",
+            "type": "object",
+            "required": true,
+            "fields": [
+              {
+                "name": "heading",
+                "type": "string",
+                "required": true
+              }
+            ]
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "page": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[A-Za-z0-9_-]{1,120}$",
+              "examples": [
+                "1"
+              ]
+            }
+          },
+          "required": [
+            "page"
+          ],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "page": {
+              "type": "string",
+              "minLength": 1
+            },
+            "quotes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "author": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 0,
+                    "maxItems": 20
+                  },
+                  "source": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://",
+                    "description": "Absolute HTTP or HTTPS URL without credentials."
+                  }
+                },
+                "required": [
+                  "text",
+                  "author",
+                  "tags"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 10
+            },
+            "metadata": {
+              "type": "object",
+              "properties": {
+                "heading": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "heading"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "page",
+            "quotes",
+            "metadata"
+          ],
+          "additionalProperties": false
+        },
+        "timeout_seconds": 45,
+        "version": "deb92ad166179d551ec60080d9358ac41cce5008343a065bffbb3491820b5ba6",
+        "revision": 1
+      }
+    }
+  ],
+  "completed_at": "2026-10-16T04:54:01.406Z"
+}

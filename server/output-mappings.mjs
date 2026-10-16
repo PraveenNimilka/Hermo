@@ -1,0 +1,47 @@
+import {z} from 'zod';
+
+const field=z.string().regex(/^[a-z][a-z0-9_]{1,39}$/);
+const css=z.string().trim().min(1).max(3000).refine(value=>!/[\u0000-\u001f\u007f]/.test(value)&&!/(?:>>|javascript\s*:|(?:^|\s)(?:xpath|text|internal:[\w-]+)\s*=|:(?:has-text|text|text-is|text-matches|nth-match)\s*\(|=>|\b(?:eval|Function)\s*\()/i.test(value));
+const selector=z.union([css,z.string().regex(/^:hermo-(?:latest|heading)-(?:user|assistant)$/)]);
+const attributes=z.enum(['src','href','alt','download','poster']);
+const mediaType=z.enum(['image','video','audio','file']);
+const nodeFields=()=>({type:z.enum(['string','number','boolean','url','object','array']).default('string'),media_type:mediaType.optional(),required:z.boolean().default(true),nullable:z.boolean().optional(),selector:selector.optional(),frame_path:z.array(css).max(8).optional(),read_mode:z.literal('last').optional(),read_attribute:attributes.optional(),source:z.literal('url_parameter').optional(),template:z.string().max(2048).optional(),parameter:field.optional(),fields:z.array(namedNode).min(1).max(16).optional(),items:itemNode.optional(),maxItems:z.number().int().min(1).max(100).optional(),minItems:z.number().int().min(0).max(100).optional()});
+const checkNode=(node,ctx)=>{
+  const issue=path=>ctx.addIssue({code:'custom',path:[path],message:'INVALID_OUTPUT_MAPPING'});
+  if(node.media_type&&(!['string','url'].includes(node.type)||node.source))issue('media_type');
+  if(node.type==='object'){
+    if(!node.fields)issue('fields');
+    for(const key of ['items','maxItems','minItems','read_mode','read_attribute','source','template','parameter'])if(node[key]!==undefined)issue(key);
+  }else if(node.type==='array'){
+    if(!node.selector||!node.items)issue('items');
+    for(const key of ['fields','read_mode','read_attribute','source','template','parameter'])if(node[key]!==undefined)issue(key);
+    if((node.minItems??1)>(node.maxItems??100))issue('minItems');
+  }else{
+    for(const key of ['fields','items','maxItems','minItems'])if(node[key]!==undefined)issue(key);
+    if(node.source){if(node.selector||!node.template||!node.parameter)issue('source');}
+    else if(node.template!==undefined||node.parameter!==undefined)issue('source');
+  }
+};
+const namedNode=z.lazy(()=>z.object({name:field,...nodeFields()}).strict().superRefine(checkNode));
+const itemNode=z.lazy(()=>z.object(nodeFields()).strict().superRefine(checkNode));
+function inspectTree(node,{strict=true,depth=0,item=false,state={count:0}}={}){
+  if(depth>4||++state.count>64||depth>0&&node.frame_path?.length||depth>0&&node.source)throw Error('INVALID_OUTPUT_MAPPINGS');
+  if(node.type==='object'){
+    const names=new Set();for(const child of node.fields){if(names.has(child.name))throw Error('INVALID_OUTPUT_MAPPINGS');names.add(child.name);inspectTree(child,{strict,depth:depth+1,state});}
+  }else if(node.type==='array')inspectTree(node.items,{strict,depth:depth+1,item:true,state});
+  else if(!item&&!node.selector&&!node.source&&(strict||node.required===false||node.nullable))throw Error('INVALID_OUTPUT_MAPPINGS');
+}
+export const outputMappingSchema=namedNode.superRefine((node,ctx)=>{try{inspectTree(node);}catch{ctx.addIssue({code:'custom',message:'INVALID_OUTPUT_MAPPINGS'});}});
+export function validateOutputMappings(outputs,{requireSelectors=true}={}){
+  try{
+    const parsed=z.array(namedNode).min(1).max(8).parse(outputs),names=new Set(),state={count:0};
+    for(const node of parsed){if(names.has(node.name))throw Error('INVALID_OUTPUT_MAPPINGS');names.add(node.name);inspectTree(node,{strict:requireSelectors,state});}
+    return parsed;
+  }catch{throw Error('INVALID_OUTPUT_MAPPINGS');}
+}
+export const usesStructuredExtraction=field=>field.type==='object'||field.type==='array'||field.required===false||field.nullable===true;
+
+export {extractOutputDocument} from '../companion/browser/output-extraction.mjs';
+export const observationSignature=value=>value?value.count+'|'+JSON.stringify(value.text)+'|'+(value.identity??''):undefined;
+export const observationChanged=(value,baseline)=>!!value&&(value.count>baseline.count||JSON.stringify(value.text)!==JSON.stringify(baseline.text)||value.identity!==undefined&&baseline.identity!==undefined&&value.identity!==baseline.identity);
+export const extractionReady=(field,value)=>!!value&&(value.text!==undefined&&(typeof value.text!=='string'||!!value.text.trim())||field.required===false||field.nullable===true);

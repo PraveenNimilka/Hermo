@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hermo · connect this tab</title>
+  <link rel="icon" href="hermo-crab.png">
+  <link rel="stylesheet" href="browser.css">
+</head>
+<body>
+<main>
+  <header class="companion-brand"><img src="hermo-crab.png" width="32" height="32" alt=""><strong>hermo</strong><span>Companion</span></header>
+  <div class="intro"><h1>Connect this tab</h1><p>Turn this website into a reusable local API.</p></div>
+  <div class="website-region"><span>Selected Chrome tab</span><p id="website">Checking website…</p></div>
+  <form id="pair" aria-describedby="pair-hint">
+    <div class="form-field"><label for="code">Connect code<input id="code" type="password" autocomplete="off" required spellcheck="false" aria-describedby="pair-hint"></label><span id="pair-hint" class="hint">Copy a fresh code from Connections in Hermo.</span></div>
+    <details class="runtime-settings"><summary>Local runtime address</summary><div class="form-field"><label for="workspace">Local Hermo address<input id="workspace" type="url" value="http://127.0.0.1:4318" required spellcheck="false" aria-describedby="workspace-hint"></label><span id="workspace-hint" class="hint">Your local runtime must be running.</span></div></details>
+    <label class="consent" for="authorize"><input id="authorize" type="checkbox" required><span>I authorize reading this tab and replaying my workflows using its signed-in account. Actions may submit forms. No cookies or passwords are copied.</span></label>
+    <button id="connect" type="submit">Connect selected tab</button>
+  </form>
+  <p id="status" role="status" aria-live="polite" tabindex="-1"></p>
+  <section id="live-preview" aria-labelledby="preview-heading">
+    <h2 id="preview-heading">Live website preview</h2>
+    <p class="note">Optional: show this tab inside Hermo. Video only, no audio. Sharing stops after 15 minutes, 2 minutes without preview requests, or when the connection ends.</p>
+    <div class="preview-actions"><button id="preview-enable" type="button" class="secondary" disabled>Enable live preview</button><button id="preview-stop" type="button" hidden>Stop preview</button></div>
+    <p id="preview-status" role="status" aria-live="polite">Connect this tab first.</p>
+  </section>
+  <p class="note permission-note">Only this tab and website origin are authorized. The popup can close. Use Stop on the website to end access. Complete sign-in directly on the website.</p>
+  <details><summary>Advanced connection tools</summary><p class="note">Use a separate controller tab only when troubleshooting the standard connection.</p><button id="open-connection-page" class="secondary" type="button">Open connection page</button></details>
+  <details><summary>Inspect chat layout</summary><p class="note">ChatGPT troubleshooting only. Read message structure and selected output text without sending a prompt or changing the connection.</p><button id="inspect-chat" class="secondary" type="button">Inspect chat layout</button><p id="diagnostic-status" role="status"></p><textarea id="diagnostic-report" aria-label="Chat layout report" readonly hidden></textarea><button id="copy-diagnostics" class="secondary" type="button" hidden>Copy diagnostics</button></details>
+  <footer class="companion-footer"><a href="http://127.0.0.1:4318/connected-browser.html" target="_blank" rel="noopener noreferrer">Setup guide</a><span>Local browser access</span></footer>
+</main>
+<script type="module" src="popup.mjs"></script>
+</body>
+</html>
