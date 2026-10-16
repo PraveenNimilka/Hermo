@@ -1,3 +1,9 @@
+# Detailed implementation reference
+
+Retained operational notes from the pre-cleanup README. Start with the
+[installation](installation.md) and [user guide](user-guide.md); historical
+milestone claims below describe their original validation snapshot.
+
 # Hermo — turn website workflows into APIs
 
 **Early access.** Hermo turns a demonstrated website task into a locally hosted REST endpoint and MCP tool. Private connections can use an explicitly selected, already signed-in tab in normal Chrome. Public retrievals can use an anonymous isolated browser; a selected normal Chrome tab uses its current session. React, Motion, Radix Dialog and Recharts provide the interface; Fastify and SQLite run locally. No paid AI plan is required for browser workflows. There is no telemetry.
