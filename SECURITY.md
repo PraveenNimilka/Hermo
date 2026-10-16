@@ -2,6 +2,34 @@
 
 Hermo is an early-access local runtime with access to explicitly authorized browser sessions. This document describes its security boundaries and known limitations. No independent security audit or penetration-test certification is claimed.
 
+## Reporting a vulnerability
+
+Report suspected vulnerabilities privately through this repository's GitHub
+**Security → Report a vulnerability** feature when available. If private
+reporting is unavailable, open a minimal issue asking for a private contact
+without exploit details, credentials, private results or browser captures.
+Maintainers have not published a response-time commitment. Use the latest
+reviewed revision; no long-term support window is established.
+
+## Incident response
+
+Stop the affected connection and runtime if unauthorized activity is suspected.
+Revoke affected Hermo keys and provider sessions, and inspect the website before
+repeating uncertain actions. Preserve a private copy of relevant audit metadata;
+do not attach databases, session state or secrets to public issues. Restore only
+from trusted backups with their original encryption-key context. A leaked secret
+must be revoked or rotated at its issuer; deleting a file does not revoke it.
+
+## Execution and authentication safeguards
+
+An OAuth callback rechecks flow validity and owner authority after token
+exchange. Logout, unlinking and OAuth reconfiguration invalidate in-flight work.
+Anonymous owner-session issuance is rate limited and capped; existing valid
+sessions can still be reused. Connected click, fill, select and check operations
+are treated as potentially mutating even if old workflow metadata calls them
+retrieval. MCP annotations and uncertain-outcome diagnostics use these effective
+semantics without rewriting published revision records.
+
 ## Media output previews
 
 Published outputs may declare image/video/audio/file URL hints; these are schema

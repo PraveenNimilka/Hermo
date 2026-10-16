@@ -7,6 +7,8 @@
 - [Configuration](configuration.md) — runtime environment, data, ports and optional identity settings.
 - [Architecture](architecture.md) — execution path, browser adapters, persistence and trust boundaries.
 - [Security](../SECURITY.md) — threat model, reporting and limits before sensitive use.
+- [Responsible use and terms](terms.md) — authorization, external effects and license boundaries; draft for legal review.
+- [Data and privacy](privacy.md) — storage, sharing, retention and exports; draft for legal review.
 
 ## Connections and examples
 

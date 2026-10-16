@@ -165,7 +165,8 @@ external-site checks; never use an existing owner's workspace for tests.
   retrying. Cancellation cannot undo changes already made there.
 - This is a loopback service, not a public hosting deployment or security audit.
 
-See the [documentation index](docs/README.md) and [Security](SECURITY.md) for operational details.
+See the [documentation index](docs/README.md), [Security](SECURITY.md),
+[responsible-use terms](docs/terms.md) and [data handling](docs/privacy.md).
 
 ## License
 
