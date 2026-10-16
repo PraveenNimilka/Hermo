@@ -1,6 +1,22 @@
-# Hermo
+<p align="center">
+  <img src="public/brand/hermo-crab.png" alt="Hermo logo" width="96" height="96" />
+</p>
 
-**Turn website workflows into local REST APIs and MCP tools.**
+<h1 align="center">Hermo</h1>
+
+<p align="center">
+  Turn website workflows into local REST APIs and MCP tools.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-24292f?style=flat-square&amp;logo=react&amp;logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5-24292f?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/Node.js-24%2B-24292f?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer" />
+  <img src="https://img.shields.io/badge/Fastify-5-24292f?style=flat-square&amp;logo=fastify&amp;logoColor=white" alt="Fastify 5" />
+  <img src="https://img.shields.io/badge/SQLite-24292f?style=flat-square&amp;logo=sqlite&amp;logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Playwright-24292f?style=flat-square" alt="Playwright" />
+  <img src="https://img.shields.io/badge/Chrome-MV3-24292f?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chrome Manifest V3" />
+</p>
 
 Hermo records browser tasks as reusable APIs for applications, scripts and AI
 agents. Define inputs, select outputs, test the result, and publish a local endpoint.
