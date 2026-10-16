@@ -140,6 +140,8 @@ test('universal production UI supports six task types, accessible layouts and re
         await page.setViewportSize(viewport);await assertUsable(page,`Task setup ${viewport.width}`);await capture(`task-setup-${viewport.width}`);
       }
       await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
+      // Radix restores focus in a deferred unmount callback after the dialog hides.
+      await page.waitForFunction(element=>element===document.activeElement,await trigger.elementHandle());
       assert.equal(await trigger.evaluate(element=>element===document.activeElement),true,'Closing the dialog restores trigger focus');
       const outline=await trigger.evaluate(element=>{const style=getComputedStyle(element);return {style:style.outlineStyle,width:parseFloat(style.outlineWidth),shadow:style.boxShadow};});
       assert.ok(outline.width>0&&outline.style!=='none'||outline.shadow!=='none','Keyboard focus has a visible indicator');
@@ -212,6 +214,7 @@ test('universal production UI supports six task types, accessible layouts and re
       assert.equal(await dialog.getByRole('button',{name:'Confirm deletion',exact:true}).isEnabled(),true);
       await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await dialog.waitFor({state:'hidden'});
       assert.ok(db.prepare('SELECT id FROM workflows WHERE id=?').get('wf_seed'));
+      await page.waitForFunction(element=>element===document.activeElement,await trigger.elementHandle());
       assert.equal(await trigger.evaluate(element=>element===document.activeElement),true);
       evidence.checks.push('Named typed alert dialog; cancellation preserves action; focus returns to trigger');
     });
