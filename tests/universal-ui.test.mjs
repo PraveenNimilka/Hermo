@@ -131,6 +131,18 @@ test('universal production UI supports six task types, accessible layouts and re
         assert.equal(await picker.inputValue(),mode);
       }
       assert.equal(new Set(details).size,6,'Every task type has distinct guidance');
+      await picker.click();
+      assert.equal(await picker.evaluate(element=>getComputedStyle(element).outlineStyle),'none','Pointer selection has no heavy focus ring');
+      if(await picker.evaluate(element=>getComputedStyle(element).appearance==='base-select')){
+        assert.equal(await picker.evaluate(element=>element.matches(':open')),true);
+        const menu=await picker.evaluate(element=>{const style=getComputedStyle(element,'::picker(select)');return {radius:style.borderRadius,background:style.backgroundColor};});
+        assert.equal(menu.radius,'10px');assert.equal(menu.background,'rgb(255, 255, 255)');
+        await page.keyboard.press('Escape');
+        assert.equal(await dialog.isVisible(),true,'Escape closes the picker before its containing dialog');
+        assert.equal(await picker.evaluate(element=>element.matches(':open')),false);
+        await picker.click();await page.keyboard.press('Home');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');
+        assert.equal(await picker.inputValue(),'generate_media','Keyboard selection updates the actual task value');
+      }else await page.keyboard.press('Escape');
       await assertUsable(page,'Task setup desktop');await capture('task-setup-desktop');
       for(let index=0;index<10;index++){
         await page.keyboard.press('Tab');
