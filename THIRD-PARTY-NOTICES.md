@@ -1,8 +1,10 @@
 # Third-party notices
 
-Hermo-authored source is licensed under [MIT](LICENSE). The following included
-code and assets retain their original terms. These notices do not relicense
-third-party material.
+New Hermo-authored material is offered under the [Hermo License](LICENSE).
+Earlier project MIT grants remain effective; their text is preserved in
+[licenses/hermo-mit-legacy.txt](licenses/hermo-mit-legacy.txt).
+The following code and assets retain their original terms. These notices do
+not relicense third-party material or restrict rights granted by its owners.
 
 ## Previously included React Bits adaptations
 
@@ -17,7 +19,7 @@ components have been removed; their original license text is retained.
 
 The components' included terms permit application/product use but restrict selling, sublicensing or
 redistributing the components themselves, whether alone, bundled or ported.
-Hermo's MIT license does not remove those conditions. Keep their source notices
+Hermo's project license does not remove those conditions. Keep their source notices
 and the included license when redistributing applicable material.
 
 ## Inter font

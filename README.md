@@ -57,11 +57,19 @@ The dashboard can close while the runtime continues serving REST and MCP request
 
 ## Quick start
 
-Requires **Node.js 24+**, npm and Git. Selected-tab workflows need **Chrome 120+**.
+Requires **Node.js 24+** and npm; Git is needed only for cloning and Git updates.
+Selected-tab workflows need **Chrome 120+**.
 Release checks run on Windows. The [installation guide](docs/installation.md)
 covers other platforms, encryption keys, browser installation and upgrades.
 
-Windows PowerShell:
+On Windows, read the [Hermo License](LICENSE), extract or clone this repository,
+then double-click **[Start Hermo.cmd](Start%20Hermo.cmd)**. It installs locked
+dependencies when needed, builds the dashboard, starts the local runtime, and
+opens your browser. Node.js 24+ with npm must already be installed. First setup
+requires internet access. Keep the launcher window open while using your APIs.
+Extension installation and website authorization remain manual.
+
+For a manual start, use Windows PowerShell:
 
 ```powershell
 git clone https://github.com/PraveenNimilka/Hermo.git
@@ -170,5 +178,13 @@ See the [documentation index](docs/README.md), [Security](SECURITY.md),
 
 ## License
 
-Authored code is [MIT licensed](LICENSE). See [third-party notices](THIRD-PARTY-NOTICES.md)
-for bundled dependencies, fonts and components with their own terms.
+New Hermo-authored material is offered under the proprietary [Hermo License](LICENSE).
+Personal and internal business use is free, including calling your workflows from
+your own applications. Modification, redistribution, rebranding, and providing
+Hermo itself as a service require written permission, subject to the license's
+exceptions. This is source-available software, not an open-source release.
+
+Earlier MIT grants remain effective for previously released material; see
+[the preserved license](licenses/hermo-mit-legacy.txt). Dependencies, fonts and
+other separately licensed material retain their [own terms](THIRD-PARTY-NOTICES.md).
+The custom terms require qualified legal review before commercial reliance.

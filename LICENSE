@@ -1,25 +1,172 @@
-MIT License
+Hermo License
+Version 1.0, effective 19 October 2026
 
-Copyright (c) 2026 Hermo contributors
+Copyright (c) 2026 Hermo contributors. All rights reserved except as granted below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Scope and acceptance
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This license covers Hermo-authored software and documentation distributed with
+this license (the "Software"). The "Licensor" is the respective copyright holder
+with authority to license that material. "You" means the person using the
+Software, or the organization on whose behalf that person is authorized to act.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Read these terms before installing or using the Software. By exercising the
+permissions granted here, you accept these terms to the extent acceptance is
+recognized under applicable law. If you do not accept them, do not exercise
+those permissions. This license is proprietary; it is not an open-source license.
 
-Third-party code and assets included in this repository retain their own license
-terms. See THIRD-PARTY-NOTICES.md and licenses/. This MIT license does not replace
-those terms.
+Third-party material, earlier licensed releases, and rights that cannot lawfully
+be restricted are addressed in sections 5 and 6 and are not overridden here.
+
+2. Free use
+
+Subject to these terms, the Licensor grants you a worldwide, non-exclusive,
+royalty-free license to download, install, compile, and run unmodified copies of
+the Software for personal use and your organization's internal business use.
+You may make copies reasonably necessary for those uses and private backups.
+Employees and contractors may operate your installations for those purposes;
+you must inform them of these terms and take reasonable steps to ensure compliance.
+
+You may configure the Software through its documented settings and interfaces,
+create, edit, export, and share your own workflows, and develop independent
+clients and integrations using its documented REST and MCP interfaces.
+Configuration and workflow editing through those interfaces are not modifications
+of the Software for the purposes of section 3.
+
+You may copy and adapt the documented request/response examples, generated client
+snippets, and generated API schemas to integrate your own applications, retaining
+any notices that accompany them. This exception does not cover copying the Hermo
+runtime, dashboard, or companion implementation into another product.
+
+You may call your authorized workflows from your own applications, including
+commercial applications, and provide their specific results to your customers.
+This does not permit providing Hermo itself, its dashboard, or a general-purpose
+workflow-building or browser-automation service to third parties. You may provide
+paid setup, training, or support to a customer who obtains their own authorized
+copy, without distributing or modifying the Software yourself.
+
+This version's permitted use has no license fee or fixed expiry. The Licensor
+may offer future versions or additional services on different terms, but doing
+so does not retroactively change this grant for a version already obtained.
+Future charges or services require a separate agreement; no payment obligation,
+subscription, or automatic renewal is created by this license.
+
+3. Uses requiring written permission
+
+Except as expressly permitted here, under a separate applicable license, or by
+mandatory law, you may not:
+
+- modify, adapt, translate, or create derivative works of the Software;
+- redistribute, publish, sublicense, sell, rent, or transfer copies of the
+  Software, whether free of charge or for payment;
+- rebrand the Software or incorporate its code into another distributed product;
+- provide the Software to third parties as a hosted, managed, white-label, or
+  general-purpose automation service, including a competing service; or
+- remove or obscure applicable copyright, licensing, or attribution notices.
+
+These activities require prior written permission from the relevant rights
+holder. A permission request, feature request, issue, or pull request is not
+itself permission. No blanket restriction on independent competing software,
+ideas, or use of unprotected interfaces is created by this license.
+
+4. Your information and responsible use
+
+This license does not transfer ownership of your data, original workflows,
+independently written clients, or results to the Licensor. It does not grant
+rights to website content, generated media, third-party services, or material
+you do not own; applicable rights and provider terms continue to govern them.
+
+Operate only websites, accounts, devices, and data you are authorized to access.
+Comply with applicable law and third-party terms. Do not use the Software for
+unauthorized access, exploitation, disruption, credential theft, fraud,
+harassment, or unlawful collection or disclosure of information. Do not use it
+to bypass authentication, MFA, CAPTCHA, or other access restrictions.
+
+You are responsible for your configurations, credentials, permissions, backups,
+and review of workflows before execution, especially sensitive or irreversible
+actions. Review docs/terms.md, docs/privacy.md, and SECURITY.md for operational
+guidance. No right to remotely access your device or collect your data is granted
+to the Licensor by this license. Hermo's current execution mode is local; it does
+not include hosted execution, a service-level commitment, or guaranteed support.
+
+5. Separate rights and third-party notices
+
+Third-party dependencies, fonts, assets, and other separately licensed material
+retain their original licenses. See THIRD-PARTY-NOTICES.md and licenses/, and
+preserve all notices required by those licenses. This license does not restrict
+rights independently granted by their owners or grant rights the Licensor lacks.
+
+Copies and material previously released under the MIT License remain available
+under that grant, subject to its conditions. This license does not revoke,
+replace, or restrict permissions already granted for that material. The previous
+project license is preserved in licenses/hermo-mit-legacy.txt; the repository's
+MIT-licensed history through commit
+6d0c465585ff2ce7d6800de70e3ed5eebb23ab4d remains unaffected. Applying these terms
+to later material does not retroactively convert earlier MIT code to proprietary
+code or establish exclusive rights over it.
+
+Publication on GitHub does not override rights granted through GitHub's terms,
+including applicable viewing and forking rights. Such rights do not themselves
+expand this license's permissions for other uses. No trademark or logo license
+is granted except identification of an authentic, unmodified Hermo installation
+and other uses permitted by law; do not imply endorsement or affiliation.
+
+6. Mandatory rights
+
+Nothing here excludes non-waivable consumer rights or lawful exceptions, including
+applicable rights concerning backups, accessibility, interoperability, observation,
+study, testing, or reverse engineering. Restrictions apply only to the extent
+permitted by law. Security research must have appropriate authorization and
+respect third-party rights; SECURITY.md provides a reporting route, not a promise
+of immunity or permission to test other people's systems.
+
+7. Warranty and liability
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS" AND
+"AS AVAILABLE", WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+NON-INFRINGEMENT. NO GUARANTEE IS MADE OF COMPLETE SECURITY, UNINTERRUPTED
+OPERATION, ACCURATE RESULTS, OR COMPATIBILITY WITH ANY PARTICULAR WEBSITE.
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSOR AND CONTRIBUTORS ARE NOT
+LIABLE FOR LOSS OF DATA, PROFITS, REVENUE, BUSINESS, OR GOODWILL, SERVICE
+INTERRUPTION, OR INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING
+FROM THE SOFTWARE OR ITS USE, INCLUDING USER MISUSE AND THIRD-PARTY ACTIONS.
+
+Nothing excludes or limits liability for fraud, wilful misconduct, gross
+negligence, death or personal injury, or any other liability where exclusion or
+limitation would be unlawful. Any mandatory statutory warranties and remedies
+remain available. This license does not create an indemnity obligation for you.
+
+8. Termination
+
+You may end this license by ceasing the uses that rely on it and removing copies
+held under it, except copies retained solely where required by law. If you
+materially breach these terms, the Licensor may terminate your rights under this
+license by written notice. For a breach capable of remedy, termination takes
+effect only if you do not remedy it within 30 days after receiving that notice.
+
+After termination, stop the uses that relied on this license and remove those
+copies, subject to mandatory law. Termination does not require surrendering your
+own data or workflows, affect third-party licenses or earlier MIT grants, or
+authorize the Licensor to delete or remotely disable your local workspace.
+Sections concerning ownership, separate rights, mandatory rights, and liability
+continue to apply as appropriate.
+
+9. Administration
+
+Written exceptions or additional permissions must come from the relevant rights
+holder and identify their scope. No assignment of copyright is implied. If a
+term is unenforceable, the remaining terms continue only to the extent they can
+lawfully operate independently. Failure to enforce a term is not a waiver.
+
+No exclusive forum, governing-law choice, arbitration requirement, or waiver of
+statutory remedies is imposed here; applicable law determines those matters.
+For non-confidential permission requests, contact the maintainer through
+https://github.com/PraveenNimilka/Hermo/issues. Never include credentials or
+private account information. Use SECURITY.md for security reports.
+
+This is a custom license, not a legal opinion or certification. Before relying
+on it for a commercial release, the project owner must obtain qualified legal
+review of copyright ownership, the responsible legal identity and contact
+details, applicable jurisdictions, consumer obligations, and enforceability.

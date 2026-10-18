@@ -3,6 +3,19 @@
 Hermo is an early-access, local-first website-to-API tool. Keep browser authority
 explicit and preserve public endpoint identities, scoped keys and persisted data.
 
+## Permissions before code changes
+
+Read the [Hermo License](LICENSE). New covered material is proprietary; this guide
+does not grant permission to modify or redistribute it. Bug reports and feature
+suggestions are welcome. Before changing covered source or submitting a code patch,
+obtain written permission and agree contribution terms with the maintainer. That
+agreement must identify the contributor's retained rights and any rights granted
+for incorporation into future proprietary releases; copyright is not assigned
+automatically. Do not submit third-party code without the required rights and notices.
+Earlier MIT grants and mandatory legal rights remain unaffected.
+
+## Authorized development
+
 Use Node.js 24 or later. Run `npm ci`, `npm run build`, `npm test` and
 `npm run test:consumers`. Browser integration tests need a supported local Chrome
 or Playwright Chromium installation. See the [installation guide](docs/installation.md)

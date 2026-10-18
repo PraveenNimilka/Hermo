@@ -5,7 +5,7 @@ local API; closing the dashboard does not stop that process.
 
 ## Requirements
 
-- Node.js **24 or newer**, npm, and Git.
+- Node.js **24 or newer** and npm. Git is optional if you download and extract the ZIP.
 - Chrome **120 or newer** for the selected-tab companion.
 - Playwright Chromium for isolated-browser retrieval. An installed compatible
   Chromium browser can also be selected through `HERMO_BROWSER_PATH`.
@@ -16,6 +16,38 @@ the same end-to-end release verification. The dedicated normal-browser launcher
 also has Windows-specific automatic browser discovery.
 
 ## Install and start
+
+Read the [Hermo License](../LICENSE) before installing. Personal and internal
+business use is free under its terms; source modification and redistribution
+have separate restrictions. Earlier MIT grants and third-party terms remain intact.
+
+### One-click Windows start
+
+1. Install Node.js 24 or newer, including npm, from [nodejs.org](https://nodejs.org/).
+2. Clone the repository or download and fully extract its ZIP to a writable folder.
+3. Double-click **[Start Hermo.cmd](../Start%20Hermo.cmd)**.
+
+The launcher installs dependencies from the lockfile when required, builds the
+dashboard, starts Hermo, and opens its loopback address after `/health` reports
+ready. It requires internet access for the initial dependency installation. It
+does not download Node.js, require administrator access, change system settings,
+or install the Chrome companion. Keep the launcher window open; Ctrl+C stops
+the runtime it started. Closing the dashboard alone does not stop your APIs.
+
+The launcher defaults to port 4317 and respects existing `HERMO_PORT`,
+`HERMO_DATA_DIR`, and encryption-key environment settings. It never resets the
+workspace or generates a replacement for a configured encryption key. If Hermo
+already responds at that address, it opens that existing runtime without
+installing, rebuilding, or starting another process; check the displayed workspace.
+Stop the existing runtime normally before upgrading. A different service using
+the port produces an error rather than being stopped or silently changing ports.
+
+For a terminal start without opening a browser, use
+`node scripts/start-hermo.mjs --no-open`. Run with `--help` for a summary.
+Selected-tab workflows need no Playwright browser download. To enable isolated
+retrieval, separately run `npx.cmd playwright install chromium`.
+
+### Manual start
 
 Windows PowerShell:
 

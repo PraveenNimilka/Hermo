@@ -1,8 +1,16 @@
 # Responsible use and terms
 
-Draft for legal review. These terms describe use of the local software and
-project-maintained support channels. They do not replace the [MIT license](../LICENSE)
-or the separate terms of included third-party material.
+Draft for legal review. The [Hermo License](../LICENSE) defines software permissions
+and takes precedence over this operational guidance if they conflict. These terms
+describe use of the local software and project-maintained support channels. They
+do not override earlier MIT grants, third-party licenses, or mandatory rights.
+
+Personal and internal business use is free under that license. You may create
+workflows and call them from your own applications, including commercial ones.
+Providing Hermo itself as a service, modifying its covered code, or redistributing
+it requires written permission unless a separate license or mandatory law allows
+it. Earlier MIT-licensed material retains its permissions. Your own data and
+original workflows are not transferred to the maintainers.
 
 ## Authorized use
 
