@@ -67,8 +67,15 @@ test('saved-browser connection page, website panel, output-only UI/API/MCP, Stop
     const pair=async()=>{
       const grant=await ok(`/studio/connections/${c.id}/browser-link`,{authorized:true});
       assert.equal((await call('/companion/browser/pair',{code:grant.code,origin,authorized:true},extensionHeaders)).value.error.code,'COMPANION_UPDATE_REQUIRED','old companion is rejected before consuming code');
-      await site.bringToFront();const target=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(x=>x.url===site.url());await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:target.targetId});await new Promise(done=>setTimeout(done,500));
-      const popup=(await cdp.send('Target.getTargets')).targetInfos.find(x=>x.url.endsWith('/popup.html'));await evaluate(popup.targetId,"document.querySelector('#open-connection-page').click();true");
+      await site.bringToFront();const target=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(x=>x.url===site.url());await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:target.targetId});
+      let popup;
+      for(let n=0;n<60;n++){
+        popup=(await cdp.send('Target.getTargets')).targetInfos.find(x=>x.url.endsWith('/popup.html'));
+        if(popup&&await evaluate(popup.targetId,"document.documentElement.dataset.hermoReady==='true'").catch(()=>false))break;
+        await new Promise(done=>setTimeout(done,100));
+      }
+      assert.ok(popup,'Chrome opens the actual extension popup');
+      await evaluate(popup.targetId,"document.querySelector('#open-connection-page').click();true");
       let pageTarget;for(let n=0;n<50;n++){pageTarget=(await cdp.send('Target.getTargets')).targetInfos.find(x=>x.url.includes('/connect.html#'));if(pageTarget)break;await new Promise(done=>setTimeout(done,100));}assert.ok(pageTarget);
       await new Promise(done=>setTimeout(done,300));await evaluate(pageTarget.targetId,`document.querySelector('#workspace').value=${JSON.stringify(origin)};document.querySelector('#code').value=${JSON.stringify(grant.code)};document.querySelector('#authorize').checked=true;document.querySelector('#pair').requestSubmit();true`);
       for(let n=0;n<70;n++){if((await ok(`/studio/connections/${c.id}/browser-link`)).linked)break;await new Promise(done=>setTimeout(done,100));}assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).linked,true);
