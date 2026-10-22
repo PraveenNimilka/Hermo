@@ -53,3 +53,39 @@ test('proxy survives a browser resetting an in-flight request',async()=>{
     const status=await new Promise((resolve,reject)=>{const req=http.get({hostname:'127.0.0.1',port,path:origin+'/sandbox/ready'},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);});assert.equal(status,407);
   }finally{socket?.destroy();await proxy.close();fixture.closeAllConnections();await new Promise(resolve=>fixture.close(resolve));}
 });
+
+test('proxy revocation closes only owned tunnels and scope reduction closes removed origins',async()=>{
+  const fixtureSockets=new Set(),clients=[];
+  const fixture=net.createServer(socket=>{fixtureSockets.add(socket);socket.on('error',()=>{});socket.once('close',()=>fixtureSockets.delete(socket));socket.pipe(socket);});
+  await new Promise(resolve=>fixture.listen(0,'127.0.0.1',resolve));
+  const connect=()=>new Promise((resolve,reject)=>{const socket=net.connect(fixture.address().port,'127.0.0.1');socket.once('error',reject);socket.once('connect',()=>resolve(socket));});
+  const proxy=await createEgressProxy('http://127.0.0.1:1',{connect}),port=Number(new URL(proxy.url).port);
+  const first=proxy.register(['https://first.example']),second=proxy.register(['https://second.example']);
+  const tunnel=(credential,hostname)=>new Promise((resolve,reject)=>{
+    const socket=net.connect(port,'127.0.0.1');clients.push(socket);socket.on('error',reject);
+    socket.once('connect',()=>socket.write(`CONNECT ${hostname}:443 HTTP/1.1\r\nHost: ${hostname}:443\r\nProxy-Authorization: Basic ${Buffer.from(credential.username+':'+credential.password).toString('base64')}\r\n\r\n`));
+    socket.once('data',data=>{assert.match(data.toString(),/200 Connection Established/);resolve(socket);});
+  });
+  try{
+    const a=await tunnel(first,'first.example'),b=await tunnel(second,'second.example');
+    const aClosed=new Promise(resolve=>a.once('close',resolve));first.release();await aClosed;
+    assert.equal(b.destroyed,false,'another connection retains its tunnel');
+    const echo=new Promise(resolve=>b.once('data',data=>resolve(data.toString())));b.write('still authorized');assert.equal(await echo,'still authorized');
+    const bClosed=new Promise(resolve=>b.once('close',resolve));second.setOrigins(['https://replacement.example']);await bClosed;
+    first.release();second.release();
+  }finally{for(const socket of clients)socket.destroy();await proxy.close();for(const socket of fixtureSockets)socket.destroy();await new Promise(resolve=>fixture.close(resolve));}
+});
+
+test('proxy discards a dial completing after its grant is revoked',async()=>{
+  let enter,finish,upstream;
+  const entered=new Promise(resolve=>enter=resolve),gate=new Promise(resolve=>finish=resolve);
+  const proxy=await createEgressProxy('http://127.0.0.1:1',{connect:async()=>{enter();await gate;upstream=new net.Socket();return upstream;}});
+  const credential=proxy.register(['https://late.example']),port=Number(new URL(proxy.url).port);
+  const client=net.connect(port,'127.0.0.1');client.on('error',()=>{});let response='';client.on('data',data=>response+=data.toString());
+  try{
+    await new Promise(resolve=>client.once('connect',resolve));client.write(`CONNECT late.example:443 HTTP/1.1\r\nHost: late.example:443\r\nProxy-Authorization: Basic ${Buffer.from(credential.username+':'+credential.password).toString('base64')}\r\n\r\n`);
+    await entered;const closed=new Promise(resolve=>client.once('close',resolve));credential.release();await closed;finish();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(upstream.destroyed,true,'late dial never gains a tunnel');assert.doesNotMatch(response,/200 Connection Established/);
+  }finally{finish();client.destroy();upstream?.destroy();await proxy.close();}
+});

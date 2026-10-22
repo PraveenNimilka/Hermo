@@ -58,7 +58,8 @@ test('real Chrome selected-tab pairing, recording, REST/MCP and privacy boundari
 
  };
 
- const ok=async(...args)=>{const r=await call(...args);assert.ok(r.status<300,JSON.stringify(r));return r.value;};
+ // This fixture owner explicitly reviews and authorizes configured publication changes.
+ const ok=async(...args)=>{if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(args[0])){const review=await ok(args[0].replace(/\/publish$/,'/permissions'));args[1]={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...args[1]};}const r=await call(...args);assert.ok(r.status<300,JSON.stringify(r));return r.value;};
 
  const snapshot=()=>ok(`/studio/connections/${connection.id}/browser`);
 
@@ -450,7 +451,7 @@ test('real Chrome selected-tab pairing, recording, REST/MCP and privacy boundari
 
       await card.getByRole('button',{name:'Test action',exact:true}).click();await repairUI.getByText('Repair this chat recording',{exact:true}).click();
 
-      await repairUI.getByRole('checkbox').check();await repairUI.getByRole('button',{name:'Repair chat recording',exact:true}).click();
+      await repairUI.getByRole('checkbox',{name:'I authorize replacing this draft recording with these two steps and retesting it.',exact:true}).check();await repairUI.getByRole('button',{name:'Repair chat recording',exact:true}).click();
 
       await repairUI.getByText('Recording repaired. Run verification with a different prompt before publishing.',{exact:true}).waitFor();
 

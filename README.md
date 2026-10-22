@@ -1,190 +1,131 @@
-<p align="center">
-  <img src="public/brand/hermo-crab.png" alt="Hermo logo" width="96" height="96" />
-</p>
+# Hermo
 
-<h1 align="center">Hermo</h1>
+Turn authorized website workflows into local REST APIs and MCP tools.
 
-<p align="center">
-  Turn website workflows into local REST APIs and MCP tools.
-</p>
+Hermo records a browser task, captures its inputs and outputs, verifies the result,
+and publishes a versioned workflow for your applications. Your workspace and
+browser sessions stay on your computer. This is a **beta, source-available release**.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-19-24292f?style=flat-square&amp;logo=react&amp;logoColor=white" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-5-24292f?style=flat-square&amp;logo=typescript&amp;logoColor=white" alt="TypeScript 5" />
-  <img src="https://img.shields.io/badge/Node.js-24%2B-24292f?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" alt="Node.js 24 or newer" />
-  <img src="https://img.shields.io/badge/Fastify-5-24292f?style=flat-square&amp;logo=fastify&amp;logoColor=white" alt="Fastify 5" />
-  <img src="https://img.shields.io/badge/SQLite-24292f?style=flat-square&amp;logo=sqlite&amp;logoColor=white" alt="SQLite" />
-  <img src="https://img.shields.io/badge/Playwright-24292f?style=flat-square" alt="Playwright" />
-  <img src="https://img.shields.io/badge/Chrome-MV3-24292f?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chrome Manifest V3" />
-</p>
-
-Hermo records browser tasks as reusable APIs for applications, scripts and AI
-agents. Define inputs, select outputs, test the result, and publish a local endpoint.
-
-[Installation](docs/installation.md) · [User guide](docs/user-guide.md) ·
-[Architecture](docs/architecture.md) · [Contributing](CONTRIBUTING.md)
-
-Hermo is in early access. Execution requires the local runtime and an authorized browser session.
+[Install](docs/installation.md) · [End-to-end guide](docs/getting-started.md) ·
+[User guide](docs/user-guide.md) · [Documentation](docs/README.md)
 
 ## Capabilities
 
-- **Browser workflows** — record a connected Chrome tab or use a separate local browser for read-only retrieval.
-- **Typed contracts** — bind dynamic inputs and extract nested objects, lists, scalar values and media URLs.
-- **Verified execution** — check outputs, inspect failures, and poll queued runs through REST or MCP.
-- **Stable publication** — publish immutable revisions, edit drafts, and roll back published workflows.
-- **Scoped access** — issue workflow-specific keys, revoke access, and generate OpenAPI documentation.
+- **Record browser tasks:** use an authorized Chrome tab or a dedicated managed browser.
+- **Define verified results:** map typed inputs, nested outputs, bounded waits and success checks.
+- **Publish stable contracts:** issue scoped keys, retain immutable revisions and review permissions.
+- **Control execution:** approve protected steps, inspect run evidence, cancel work and revoke keys.
+- **Integrate locally:** invoke the same published workflow through REST, OpenAPI or MCP.
 
-Use Hermo for supported searches, catalogs, dashboards, forms, internal tools and
-AI websites. Website permissions and technical limits still apply.
-Use workflows only where you are authorized and automation is permitted. Hermo
-does not bypass website access checks.
+## Install
 
-## How it works
+Requires **Node.js 24+ with npm**. Windows is the release-tested platform.
+Connected-tab workflows require Chrome 120+ and the unpacked companion.
+Review the [license](LICENSE) before installing.
 
-Publishing saves the tested workflow revision and issues a scoped key. Each API
-request is authenticated and validated before entering a durable queue. The
-runtime executes the authorized steps and checks the outputs; clients poll the
-run ID for validated JSON or an explicit failure.
+Download and extract the [beta release](https://github.com/PraveenNimilka/Hermo/releases),
+then double-click **Start Hermo.cmd**. It installs locked dependencies, builds the
+dashboard and starts the runtime. Keep its terminal open while using your APIs.
+Internet access is required during initial setup; Node.js must already be installed.
 
-| Part | Technology | Responsibility |
-| --- | --- | --- |
-| Dashboard | React, TypeScript | Connect websites, edit workflows and inspect runs |
-| Local runtime | Node.js, Fastify, SQLite | Authenticate requests, queue work and persist results |
-| Chrome companion | Manifest V3 | Operate the explicitly authorized website tab |
-| Browser adapters | Companion commands or Playwright | Execute the same workflow contract within each mode's permissions |
-
-The dashboard can close while the runtime continues serving REST and MCP requests.
-
-## Quick start
-
-Requires **Node.js 24+** and npm; Git is needed only for cloning and Git updates.
-Selected-tab workflows need **Chrome 120+**.
-Release checks run on Windows. The [installation guide](docs/installation.md)
-covers other platforms, encryption keys, browser installation and upgrades.
-
-On Windows, read the [Hermo License](LICENSE), extract or clone this repository,
-then double-click **[Start Hermo.cmd](Start%20Hermo.cmd)**. It installs locked
-dependencies when needed, builds the dashboard, starts the local runtime, and
-opens your browser. Node.js 24+ with npm must already be installed. First setup
-requires internet access. Keep the launcher window open while using your APIs.
-Extension installation and website authorization remain manual.
-
-For a manual start, use Windows PowerShell:
+For a terminal installation of this beta:
 
 ```powershell
-git clone https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.1 https://github.com/PraveenNimilka/Hermo.git
 cd Hermo
 npm.cmd ci
 npm.cmd run build
 npm.cmd start
 ```
 
-Open [http://127.0.0.1:4317](http://127.0.0.1:4317) and create a workspace password.
-Keep the runtime terminal running; the dashboard can be closed independently.
+Open [127.0.0.1:4317](http://127.0.0.1:4317) and create a workspace password.
+For managed-browser workflows, also run `npx.cmd playwright install chromium`.
+See [installation](docs/installation.md) for companion setup, encryption and upgrades.
 
-To connect a website:
+## Create your first workflow
 
-1. Load [`companion/browser`](companion/browser/README.md) as an unpacked extension
-   at `chrome://extensions`.
-2. Set the companion's **Local runtime address** to `http://127.0.0.1:4317`.
-   Its initial saved address uses port 4318; it must match your running instance.
-3. Create a website connection in Hermo, generate its Connect code, and authorize
-   the selected website tab through the companion.
+1. Open **Connections**, add a website and authorize access to its account or public pages.
+2. For an existing Chrome tab, load `companion/browser` at `chrome://extensions`,
+   create a Connect code in Hermo, and connect that tab through the companion.
+3. Choose **Actions → Create action**. Demonstrate the task and name its dynamic inputs.
+4. Select actual result fields and define checks that prove the requested task completed.
+5. Test the workflow, inspect its output, review its permissions and choose **Publish API**.
+6. Copy the scoped key and generated examples from **API docs**.
 
-## Create and call an API
+Follow the [end-to-end guide](docs/getting-started.md) for a complete local practice
+workflow, REST polling, MCP invocation and restart verification.
 
-1. Open **Actions → Create action** and choose the connected website.
-2. Record the task, or select outputs directly for an extraction workflow.
-3. Name changing inputs, select actual results, and define success checks.
-4. Run a test. Inspect missing values or failed checks before publishing.
-5. Choose **Publish API**, copy its scoped key, and open **API docs**.
+## Call a published workflow
 
-Use the endpoint and fields from your own published contract. For example:
+Use the action ID and input fields from your own contract. This example assumes
+an `orders.lookup` action with an `order_id` input:
 
 ```sh
-curl -X POST 'http://127.0.0.1:4317/v1/actions/catalog.lookup/versions/1/runs' \
+curl -X POST 'http://127.0.0.1:4317/v1/actions/orders.lookup/versions/1/runs' \
   -H 'Authorization: Bearer YOUR_HERMO_KEY' \
-  -H 'Idempotency-Key: YOUR_UNIQUE_LOGICAL_REQUEST_ID' \
+  -H 'Idempotency-Key: YOUR_UNIQUE_REQUEST_ID' \
   -H 'Content-Type: application/json' \
-  --data '{"input":{"search_query":"laptop"}}'
+  --data '{"input":{"order_id":"ORD-2041"}}'
 ```
 
-The example contract is illustrative; create your own workflow first. An accepted
-request returns HTTP 202 with `run_id` and `status_url`. Poll that URL with the
-same key, and read `result` only when `status` is `succeeded`. Preserve the input
-and idempotency key when recovering a lost receipt. See the [user guide](docs/user-guide.md)
-for polling, MCP, media outputs and workflow repair.
+An accepted request returns HTTP 202 with `run_id` and `status_url`. Poll that URL
+with the same key until terminal; consume `result` only when `status` is
+`succeeded`. Reuse the same input and request ID when recovering a lost receipt.
+For MCP, use a Streamable HTTP client at `/mcp` with the same scoped key.
+See [calling workflows](docs/user-guide.md#5-publish-and-call-the-api).
 
 ## Configuration
 
-Set variables in the environment of the runtime process. `.env` files are not
-loaded automatically. Never commit workspace data or encryption keys.
+Set variables in the runtime's environment. Hermo does not load `.env` files.
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `HERMO_PORT` | No | `4317` | Loopback server port |
-| `HERMO_DATA_DIR` | No | `.hermo/` | Local persistent workspace |
-| `HERMO_MASTER_KEY` | Outside Windows | Windows DPAPI | Persisted 32-byte base64 encryption key |
-| `HERMO_BROWSER_PATH` | No | Browser discovery | Isolated Chromium executable |
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `HERMO_PORT` | `4317` | Loopback HTTP port |
+| `HERMO_DATA_DIR` | `.hermo/` | Persistent local workspace |
+| `HERMO_MASTER_KEY` | Windows CurrentUser DPAPI | Stable 32-byte base64 key; required outside Windows |
+| `HERMO_BROWSER_PATH` | Browser discovery | Trusted managed Chromium executable |
 
-Windows uses CurrentUser DPAPI unless an explicit key is supplied. Back up the
-entire data directory with its encryption-key context. See [configuration](docs/configuration.md)
-for browser overrides and optional workspace Google sign-in.
+Keep keys and complete backups private. Replacing a key does not recover encrypted
+data. See [configuration](docs/configuration.md) and [security](SECURITY.md).
 
-## Project layout
+## Repository layout
 
-```text
-src/              React and TypeScript dashboard
-server/           Fastify runtime, SQLite store, workflow engine and adapters
-companion/        Chrome extensions and their setup guides
-public/           Served guides, examples and local practice pages
-tests/            Runtime, browser, security and workflow regression tests
-validation-apps/  Example REST/MCP consumer applications
-scripts/          Explicit integration and public-site verification tools
-docs/             Installation, usage, configuration and architecture
-```
+| Directory | Contents |
+| --- | --- |
+| `src/` | Dashboard components and styles |
+| `server/` | Runtime, encrypted store, execution and APIs |
+| `companion/browser/` | Canonical Chrome companion |
+| `public/` | Served guides, assets and practice pages |
+| `integrations/` | Optional, separately documented integrations |
+| `tests/` | Regression tests and synthetic fixtures |
+| `validation-apps/` | Runnable REST/MCP consumer examples |
+| `scripts/` | Startup and explicit verification tools |
+| `docs/` | Operating guides, architecture and security references |
 
-## Development
+## Development and verification
 
-```sh
-npm ci
-npm run check:repo
-npx playwright install chromium
-npm run build
-npm test
-npm run test:consumers
-```
+Read [Contributing](CONTRIBUTING.md) for licensing and contribution requirements.
+Run `npm ci`, `npx playwright install chromium`, `npm run build`, `npm test`,
+`npm run test:consumers` and `npm run check:repo`. The build includes TypeScript
+checking; there is no separate lint command. Tests use disposable state, never an
+owner's workspace. See [release verification](docs/testing/release-acceptance.md).
 
-On PowerShell, use `npm.cmd` and `npx.cmd` if execution policy blocks shell shims.
-There is no separate lint command; the build includes TypeScript checking.
-Tests use disposable state. See [Contributing](CONTRIBUTING.md) before running
-external-site checks; never use an existing owner's workspace for tests.
+## Known limitations
 
-## Current limits
+- Keep the runtime and computer running. This loopback service is not configured for public hosting.
+- Connected Chrome needs its authorized tab and valid lease. Managed workflows can reopen encrypted sessions after restart.
+- Managed retrieval permits GET/HEAD only. Reviewed website actions allow HTTP submissions and WSS within exact approved origins.
+- Website changes, expired sessions, quotas, verification screens and unsupported layouts can stop a workflow.
+- Cancellation cannot undo website changes. Inspect uncertain submissions before retrying; they are not automatically replayed.
+- Active managed profiles use temporary readable files. Crashes recover the last completed encrypted snapshot.
+- Service workers and arbitrary downloads are disabled. Protected media links may not work in other applications.
+- Windows is verified; macOS/Linux lack equivalent release testing. See [compatibility](docs/browser-compatibility.md).
 
-- The runtime and computer must stay available; there is no cloud execution.
-- Connected Chrome needs its authorized tab and valid website session. Pairing
-  expires with the owner lease; browser/runtime restart requires reconnection.
-- Isolated retrieval allows GET/HEAD only. It cannot submit or generate media.
-- Website changes, sign-in checks and unsupported layouts can break recordings.
-- Media outputs are links; protected, expired or browser-only assets may not load
-  in another application. Hermo does not export Chrome cookies to fix them.
-- Submission timeouts may leave an unknown outcome. Inspect the website before
-  retrying. Cancellation cannot undo changes already made there.
-- This is a loopback service, not a public hosting deployment or security audit.
+## License and support
 
-See the [documentation index](docs/README.md), [Security](SECURITY.md),
-[responsible-use terms](docs/terms.md) and [data handling](docs/privacy.md).
-
-## License
-
-New Hermo-authored material is offered under the proprietary [Hermo License](LICENSE).
-Personal and internal business use is free, including calling your workflows from
-your own applications. Modification, redistribution, rebranding, and providing
-Hermo itself as a service require written permission, subject to the license's
-exceptions. This is source-available software, not an open-source release.
-
-Earlier MIT grants remain effective for previously released material; see
-[the preserved license](licenses/hermo-mit-legacy.txt). Dependencies, fonts and
-other separately licensed material retain their [own terms](THIRD-PARTY-NOTICES.md).
-The custom terms require qualified legal review before commercial reliance.
+Personal and internal business use is free under the proprietary [Hermo License](LICENSE).
+Modification, redistribution, rebranding and providing Hermo as a service require
+written permission, subject to its exceptions. Earlier [MIT grants](licenses/hermo-mit-legacy.txt)
+and [third-party terms](THIRD-PARTY-NOTICES.md) remain intact.
+Use [GitHub issues](https://github.com/PraveenNimilka/Hermo/issues) for reproducible
+bugs without credentials or private data. Follow [SECURITY.md](SECURITY.md) for private reports.

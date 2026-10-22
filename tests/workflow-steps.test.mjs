@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateWorkflowSteps} from '../server/workflow-steps.mjs';
 import {PATH_INPUT_PATTERN} from '../server/workflow-contract.mjs';
+import {compileApprovalPolicy} from '../server/approval-policy.mjs';
+import {executionCapabilities,normalizeExecutionConfig,validateExecutionConfig,workflowExecutionCompatibility} from '../server/execution-capabilities.mjs';
 
 const options={origins:['https://shop.example'],sandboxOrigin:'http://127.0.0.1:4318',inputs:{query:{type:'string'},quantity:{type:'number'},enabled:{type:'boolean'},item_id:{type:'string',pattern:PATH_INPUT_PATTERN}}};
 const validate=(steps,extra={})=>validateWorkflowSteps(steps,{...options,...extra});
@@ -19,6 +21,20 @@ test('empty and disabled-only timelines remain valid for extraction-only workflo
   assert.deepEqual(validate([{op:'click',selector:'#optional',enabled:false}]),[{op:'click',selector:'#optional',enabled:false}]);
   rejects([{op:'evaluate',enabled:false,script:'document.cookie'}]);
   rejects([{op:'navigate',enabled:false,url:'https://evil.example'}]);
+});
+
+test('approval checkpoints are explicit booleans on action and navigation steps only',()=>{
+  for(const step of [{op:'navigate',url:'https://shop.example/search'},{op:'click',selector:'#search'},{op:'fill',selector:'#query',parameter:'query'},{op:'select',selector:'#plan',value:'basic'},{op:'check',selector:'#consent',value:'true'}]){
+    assert.equal(validate([{...step,approval_required:true}])[0].approval_required,true);
+    assert.equal(validate([{...step,approval_required:false}])[0].approval_required,false);
+    rejects([{...step,approval_required:'true'}]);
+  }
+  assert.equal(validate([{op:'click',selector:'#optional',enabled:false,approval_required:true}])[0].enabled,false);
+  for(const step of [{op:'wait_element',selector:'#result',state:'visible'},{op:'wait_text',selector:'#result',text:'Ready'},{op:'wait_url',url:'https://shop.example/results'}]){
+    rejects([{...step,approval_required:true}]);
+    rejects([{...step,enabled:false,approval_required:true}]);
+    assert.equal(validate([{...step,approval_required:false}])[0].approval_required,false);
+  }
 });
 
 test('semantic locator candidates prioritize stable identities and reject ambiguous or unrestricted configuration',()=>{
@@ -80,4 +96,48 @@ test('timeline bounds and strict step objects reject unrelated browser capabilit
   assert.equal(validate(Array.from({length:32},()=>({op:'click',selector:'#button'}))).length,32);
   rejects(Array.from({length:33},()=>({op:'click',selector:'#button'})));
   for(const step of [{op:'click',selector:'#button',cookies:true},{op:'navigate',url:'https://shop.example',script:'alert(1)'},{op:'click',selector:'#button',enabled:'false'},{op:'press',key:'Enter'},{op:'fetch',url:'https://shop.example'},null])rejects([step]);
+});
+
+test('extended waits remain declarative, bounded and explicit about output predicates',()=>{
+  assert.deepEqual(validate([{op:'wait_delay',duration_ms:100}]),[{op:'wait_delay',duration_ms:100}]);
+  assert.deepEqual(validate([{op:'wait_navigation'}]),[{op:'wait_navigation',state:'load'}]);
+  assert.deepEqual(validate([{op:'wait_navigation',url:'https://shop.example/results',state:'domcontentloaded'}]),[{op:'wait_navigation',url:'https://shop.example/results',state:'domcontentloaded'}]);
+  assert.deepEqual(validate([{op:'wait_response',url:'https://shop.example/result'}]),[{op:'wait_response',url:'https://shop.example/result',method:'GET'}]);
+  assert.equal(validate([{op:'wait_response',url:'https://shop.example/result',method:'HEAD',status:204}])[0].status,204);
+  for(const value of [null,'',42,false])assert.deepEqual(validate([{op:'wait_output',output:'answer',predicate:'equals',value}],{outputs:[{name:'answer'}]}),[{op:'wait_output',output:'answer',predicate:'equals',value}]);
+  assert.deepEqual(validate([{op:'wait_output',output:'answer',predicate:'nonempty'}],{outputs:[{name:'answer'}]}),[{op:'wait_output',output:'answer',predicate:'nonempty'}]);
+  rejects([{op:'wait_output',output:'answer',predicate:'equals'}]);rejects([{op:'wait_output',output:'answer',predicate:'nonempty',value:'ignored'}]);
+  rejects([{op:'wait_output',output:'missing',predicate:'nonempty'}],{outputs:[{name:'answer'}]});rejects([{op:'wait_output',output:'answer',predicate:'equals',value:{nested:true}}]);rejects([{op:'wait_output',output:'answer',predicate:'equals',value:Infinity}]);
+  for(const duration_ms of [0,99,10001,1.5,'1000'])rejects([{op:'wait_delay',duration_ms}]);
+  for(const step of [{op:'wait_delay',duration_ms:1000,selector:'#unused'},{op:'wait_navigation',state:'networkidle'},{op:'wait_navigation',script:'document.cookie'},{op:'wait_response',url:'https://shop.example/result',method:'POST'},{op:'wait_response',url:'https://shop.example/result',status:600}])rejects([step]);
+});
+
+test('extended waits validate exact approved URLs and common deadline limits',()=>{
+  const waits=[{op:'wait_delay',duration_ms:1000},{op:'wait_navigation'},{op:'wait_output',output:'answer',predicate:'nonempty'},{op:'wait_response',url:'https://shop.example/result'}];
+  for(const step of waits){
+    assert.equal(validate([{...step,timeout_ms:100,error_policy:'stop'}])[0].timeout_ms,100);
+    assert.equal(validate([{...step,timeout_ms:30000,error_policy:'continue'}])[0].error_policy,'continue');
+    for(const timeout_ms of [0,99,30001,Infinity,'1000'])rejects([{...step,timeout_ms}]);
+    rejects([{...step,approval_required:true}]);
+  }
+  for(const op of ['wait_navigation','wait_response'])for(const url of ['https://evil.example/result','https://shop.example.evil.test/result','file:///private','https://user:secret@shop.example/result','https://127.0.0.1/result',options.sandboxOrigin+'/studio/session'])rejects([{op,url}]);
+  for(const step of [{op:'navigate',url:'https://shop.example/'},{op:'click',selector:'#search'},{op:'fill',selector:'#query',parameter:'query'},{op:'check',selector:'#agree',value:'true'}])rejects([{...step,error_policy:'continue'}]);
+  rejects([{op:'wait_delay',duration_ms:1000,error_policy:'retry'}]);
+  const compiled=compileApprovalPolicy({steps:waits,approval_policy:{mode:'risk_rules',rules:[{operations:['wait_output','wait_delay','wait_response','wait_navigation']}]}});
+  assert.equal(compiled.steps.every(step=>step.approval_required===true),true,'Configured policies can pause before waits even though authored explicit wait gates are rejected');
+});
+
+test('execution capability metadata advertises response observation only for the managed adapter',()=>{
+  const source={id:'conn_extended_waits',url:'https://shop.example/',origins:['https://shop.example'],access:'public',browser_mode:'isolated'},connected={...source,browser_mode:'connected'};
+  const responseStep={op:'wait_response',url:'https://shop.example/result',method:'GET',status:200};
+  const definition={steps:[responseStep],inputs:{},outputs:[{name:'answer',selector:'#answer',type:'string'}],verifiers:[],effect:'retrieval'};
+  assert.equal(executionCapabilities('managed_local').operations.includes('wait_response'),true);assert.equal(executionCapabilities('connected_chrome').operations.includes('wait_response'),false);
+  assert.equal(executionCapabilities('managed_local').network_response_wait,true);assert.equal(executionCapabilities('connected_chrome').network_response_wait,false);
+  assert.equal(normalizeExecutionConfig(connected).allowed_actions.includes('wait_response'),false);
+  assert.throws(()=>validateExecutionConfig(connected,{...normalizeExecutionConfig(connected),allowed_actions:['wait_response']}),/INVALID_EXECUTION_CONFIG/);
+  assert.equal(workflowExecutionCompatibility(source,definition).compatible,true);
+  const unsupported=workflowExecutionCompatibility(connected,definition);assert.equal(unsupported.compatible,false);assert.match(unsupported.errors.find(error=>error.code==='UNSUPPORTED_STEP').message,/cannot observe network responses/);
+  for(const step of [{op:'wait_delay',duration_ms:1000},{op:'wait_navigation',state:'load'},{op:'wait_output',output:'answer',predicate:'nonempty'}])assert.equal(workflowExecutionCompatibility(connected,{...definition,steps:[step]}).compatible,true);
+  assert.equal(workflowExecutionCompatibility(source,{...definition,steps:[{op:'wait_output',output:'missing',predicate:'nonempty'}]}).errors[0].code,'INVALID_OUTPUT_REFERENCE');
+  assert.equal(workflowExecutionCompatibility(source,{...definition,steps:[{...responseStep,url:'https://evil.example/result'}]}).errors[0].code,'NAVIGATION_NOT_ALLOWED');
 });

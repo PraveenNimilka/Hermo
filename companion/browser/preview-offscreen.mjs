@@ -11,7 +11,9 @@ function stop(){
 async function start(message){
   stop();const currentEpoch=epoch;
   if(typeof message.streamId!=='string'||message.streamId.length>4096||!Number.isInteger(message.tabId)||!Number.isFinite(message.expiresAt)||message.expiresAt<=Date.now()||message.expiresAt>Date.now()+PREVIEW_LEASE_MS+1000||typeof message.nonce!=='string'||message.nonce.length>64)return {ok:false};
-  const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{mandatory:{chromeMediaSource:'tab',chromeMediaSourceId:message.streamId,minFrameRate:5,maxFrameRate:10}}});
+  const viewport=message.viewport;
+  if(viewport&&(!Number.isInteger(viewport.width)||!Number.isInteger(viewport.height)||viewport.width<1||viewport.height<1||viewport.width>8192||viewport.height>8192))return {ok:false};
+  const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{mandatory:{chromeMediaSource:'tab',chromeMediaSourceId:message.streamId,minFrameRate:5,maxFrameRate:10,...viewport?{minWidth:viewport.width,maxWidth:viewport.width,minHeight:viewport.height,maxHeight:viewport.height}:{}}}});
   if(epoch!==currentEpoch){stream.getTracks().forEach(track=>track.stop());return {ok:false};}
   const video=document.createElement('video'),canvas=document.createElement('canvas');
   video.muted=true;video.playsInline=true;video.srcObject=stream;

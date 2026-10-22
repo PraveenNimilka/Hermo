@@ -11,6 +11,14 @@ function fixture(){
   return {preview:createLivePreview({chrome,now:()=>timestamp}),calls,session,chrome,setTime:value=>timestamp=value,setTab:value=>tab={...tab,...value},setResponse:value=>response=value,orphan:()=>{document=true;}};
 }
 
+test('capture requests the authorized website viewport instead of a default camera size',async()=>{
+  const f=fixture();f.chrome.scripting={executeScript:async()=>[{result:{width:1366,height:768}}]};
+  await f.preview.start(f.session);assert.deepEqual(f.calls.find(value=>value?.op==='start').viewport,{width:1366,height:768});await f.preview.stop(f.session);
+  const invalid=fixture();invalid.chrome.scripting={executeScript:async()=>[{result:{width:0,height:768}}]};
+  await assert.rejects(invalid.preview.start(invalid.session),/viewport is unavailable/);
+  assert.equal(invalid.calls.some(value=>value?.op==='start'),false);
+});
+
 test('visual preview is separate from connection recovery, explicit, tab-scoped, and bounded',async()=>{
   const f=fixture();f.orphan();await f.preview.reset();assert.ok(f.calls.includes('close'));
   assert.deepEqual(await f.preview.getFrame(f.session),{state:'disabled'});

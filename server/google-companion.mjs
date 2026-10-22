@@ -25,7 +25,7 @@ export function validateGoogleCookies(value){
 }
 export function installGoogleCompanion(app,{origin,store,sessions,ownerCookie,session,fail,rate,normalBrowserLauncher}){
   const grants=new Map();
-  const paths=()=>({workspace_origin:origin,extension_directory:resolve(dirname(fileURLToPath(import.meta.url)),'../companion/chrome'),guide_url:origin+'/normal-chrome.html'});
+  const paths=()=>({workspace_origin:origin,extension_directory:resolve(dirname(fileURLToPath(import.meta.url)),'../integrations/google-session-extension'),guide_url:origin+'/normal-chrome.html'});
   app.post('/studio/browser-profiles/normal-chrome',async req=>{
     rate('normal-chrome-import-start',5,900000);
     const parsed=z.object({name:z.string().trim().min(1).max(80),authorized:z.literal(true),password:z.string().min(1).max(128)}).strict().safeParse(req.body);

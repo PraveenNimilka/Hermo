@@ -44,6 +44,21 @@ The companion uses Manifest V3 session recovery; it does not assume a permanentl
 running service worker. Restart or expired authority requires explicit pairing.
 Interrupted mutations are not resumed automatically.
 
+Workflow steps may require an owner checkpoint. The runtime stores pending
+approval metadata in the existing encrypted run payload while keeping status
+`running` for polling compatibility. Only authenticated, CSRF-protected owner
+routes can approve a particular pending run/step ID. Approval is one-use and
+bounded by the execution timeout; it never extends that budget. Permission and
+target checks repeat after waiting. Shutdown/restart fails interrupted runs
+instead of recovering approval authority. Checkpoints hold the current
+single-worker queue, including jobs on other connections.
+
+Key revocation cancels only that consumer's accepted jobs. A cancelled dispatched
+companion command remains as a bounded tombstone until its acknowledgement or
+original deadline. Its mutation reauthorization is denied, its late reply is
+discarded, and sibling work waits for it to drain. Lost acknowledgement still
+ends the connection; an uncertain command is never replayed automatically.
+
 Isolated execution uses a dedicated local browser and separately saved session.
 Its policy permits GET/HEAD retrieval, not arbitrary website mutations. There is
 no automatic fallback from a missing tab into another account or browser mode.
@@ -63,3 +78,5 @@ for device security or an independent security review.
 
 See [Security](../SECURITY.md) for the detailed threat model and the
 [user guide](user-guide.md) for operational behavior.
+The [trusted execution reference](architecture/trusted-execution.md) covers
+guarded state transitions, verification, owner checkpoints and the related ADRs.

@@ -1,13 +1,17 @@
 import {z} from 'zod';
+import {validateOutputConstraintDefinition} from './output-constraints.mjs';
 
 const field=z.string().regex(/^[a-z][a-z0-9_]{1,39}$/);
 const css=z.string().trim().min(1).max(3000).refine(value=>!/[\u0000-\u001f\u007f]/.test(value)&&!/(?:>>|javascript\s*:|(?:^|\s)(?:xpath|text|internal:[\w-]+)\s*=|:(?:has-text|text|text-is|text-matches|nth-match)\s*\(|=>|\b(?:eval|Function)\s*\()/i.test(value));
 const selector=z.union([css,z.string().regex(/^:hermo-(?:latest|heading)-(?:user|assistant)$/)]);
 const attributes=z.enum(['src','href','alt','download','poster']);
 const mediaType=z.enum(['image','video','audio','file']);
-const nodeFields=()=>({type:z.enum(['string','number','boolean','url','object','array']).default('string'),media_type:mediaType.optional(),required:z.boolean().default(true),nullable:z.boolean().optional(),selector:selector.optional(),frame_path:z.array(css).max(8).optional(),read_mode:z.literal('last').optional(),read_attribute:attributes.optional(),source:z.literal('url_parameter').optional(),template:z.string().max(2048).optional(),parameter:field.optional(),fields:z.array(namedNode).min(1).max(16).optional(),items:itemNode.optional(),maxItems:z.number().int().min(1).max(100).optional(),minItems:z.number().int().min(0).max(100).optional()});
+const nodeFields=()=>({type:z.enum(['string','number','integer','boolean','url','null','object','array']).default('string'),coercion:z.enum(['legacy','strict']).optional(),media_type:mediaType.optional(),required:z.boolean().default(true),nullable:z.boolean().optional(),selector:selector.optional(),frame_path:z.array(css).max(8).optional(),read_mode:z.literal('last').optional(),read_attribute:attributes.optional(),source:z.literal('url_parameter').optional(),template:z.string().max(2048).optional(),parameter:field.optional(),fields:z.array(namedNode).min(1).max(16).optional(),items:itemNode.optional(),maxItems:z.number().int().min(1).max(100).optional(),minItems:z.number().int().min(0).max(100).optional(),uniqueItems:z.boolean().optional(),enum:z.array(z.union([z.string().max(4096),z.number().finite(),z.boolean(),z.null()])).min(1).max(50).optional(),minimum:z.number().finite().optional(),maximum:z.number().finite().optional(),minLength:z.number().int().min(1).max(4096).optional(),maxLength:z.number().int().min(1).max(4096).optional(),format:z.enum(['date','date-time','time']).optional(),pattern:z.string().min(3).max(300).optional()});
 const checkNode=(node,ctx)=>{
   const issue=path=>ctx.addIssue({code:'custom',path:[path],message:'INVALID_OUTPUT_MAPPING'});
+  if(!validateOutputConstraintDefinition(node))issue('constraints');
+  if(['object','array'].includes(node.type)&&node.coercion!==undefined)issue('coercion');
+  if(node.type==='null'&&(node.source||node.media_type||node.read_attribute||node.nullable!==undefined))issue('type');
   if(node.media_type&&(!['string','url'].includes(node.type)||node.source))issue('media_type');
   if(node.type==='object'){
     if(!node.fields)issue('fields');
@@ -39,7 +43,15 @@ export function validateOutputMappings(outputs,{requireSelectors=true}={}){
     return parsed;
   }catch{throw Error('INVALID_OUTPUT_MAPPINGS');}
 }
-export const usesStructuredExtraction=field=>field.type==='object'||field.type==='array'||field.required===false||field.nullable===true;
+export const usesStructuredExtraction=field=>field.type==='object'||field.type==='array'||field.type==='null'||field.required===false||field.nullable===true;
+// A caption or filename alone cannot establish a newly generated media result.
+// Keep those useful metadata outputs, but require an actual asset address too.
+const hasMediaAddress=(field,selected=false)=>!!field&&typeof field==='object'&&(!!((field.selector||selected)&&['src','href','poster'].includes(field.read_attribute))||(Array.isArray(field.fields)?field.fields:[]).some(child=>hasMediaAddress(child,selected||!!field.selector))||!!field.items&&hasMediaAddress(field.items,selected||!!field.selector));
+export const mediaOutputError=definition=>definition?.action_type==='generate_media'&&!(Array.isArray(definition.outputs)?definition.outputs:[]).some(field=>hasMediaAddress(field))
+  ?'Choose an image, video, audio or download URL output for media generation. Descriptions and filenames can be additional outputs; renaming them does not capture the media address.'
+  :undefined;
+// Integer is a server constraint, so existing companions can read its raw text.
+export function browserOutputMapping(field){return {...field,...field.type==='integer'?{type:'number'}:{},...field.fields?{fields:field.fields.map(browserOutputMapping)}:{},...field.items?{items:browserOutputMapping(field.items)}:{}};}
 
 export {extractOutputDocument} from '../companion/browser/output-extraction.mjs';
 export const observationSignature=value=>value?value.count+'|'+JSON.stringify(value.text)+'|'+(value.identity??''):undefined;

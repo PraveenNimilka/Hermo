@@ -30,7 +30,7 @@ test('latest generated image targeting survives temporary turn IDs and excludes 
   assert.equal(observationChanged(await read(),after),false,'an unchanged latest image cannot become fresh by rereading');
 });
 
-test('latest media readiness waits for real image loading and keeps blob outputs unavailable',async t=>{
+test('latest media readiness waits for real image loading and identifies page-local image addresses',async t=>{
   const page=await fixture(t,'<main><div role="log"><img width="240" height="160" src="/old.svg"></div></main>');
   let release;const wait=new Promise(resolve=>{release=resolve;});await page.route('https://example.com/pending.svg',async route=>{await wait;await route.fulfill({contentType:'image/svg+xml',body:svg});});
   t.after(()=>release());
@@ -40,8 +40,8 @@ test('latest media readiness waits for real image loading and keeps blob outputs
   const structured=await page.evaluate(extractOutputDocument,{mapping});assert.equal(structured.streaming,true,'optional/nested extraction must not call an unloaded image complete');
   release();await page.waitForFunction(()=>document.querySelector('#pending').naturalWidth>0);assert.equal((await page.evaluate(extractOutputDocument,{mapping})).streaming,false);
   await page.locator('#pending').evaluate(el=>el.src=URL.createObjectURL(new Blob(['canvas replacement'],{type:'image/png'})));
-  assert.equal((await page.evaluate(inspectDocument,{...mapping,connected:true})).text,'');
-  assert.equal((await page.evaluate(extractOutputDocument,{mapping})).hermo_error,'ACTION_UNAVAILABLE');
+  assert.match((await page.evaluate(inspectDocument,{...mapping,connected:true})).text,/^blob:https:\/\/example\.com\//);
+  assert.match((await page.evaluate(extractOutputDocument,{mapping})).value,/^blob:https:\/\/example\.com\//);
 });
 
 test('catalog media stays individually selected without inferred latest semantics',async t=>{
@@ -52,11 +52,22 @@ test('catalog media stays individually selected without inferred latest semantic
 
 test('repair presets resolve image, video and audio in explicitly marked result streams without provider URLs',async t=>{
   const page=await fixture(t,'<main></main>');
-  for(const [scope,tag,kind]of [['data-turn="assistant"','img','image'],['data-testid="assistant-message"','video','video'],['role="log"','audio','audio']]){
+  for(const [scope,tag,kind]of [['data-turn="assistant"','img','image'],['data-testid="assistant-message"','video','video'],['role="log"','audio','audio'],['data-testid="generated-image-preview"','img','image']]){
     await page.locator('main').evaluate((main,{scope,tag})=>main.innerHTML=`<div ${scope}><${tag} controls src="/old.svg" style="display:block;width:240px;height:160px"></${tag}><${tag} controls src="/new.svg" style="display:block;width:240px;height:160px"></${tag}></div>`,{scope,tag});
     const preset=mediaTargetPresets.find(item=>item.value===kind),mapping={selector:preset.selector,read_mode:'last',read_attribute:preset.read_attribute};
     const doc=await page.evaluate(inspectDocument,{connected:true}),item=doc.elements.find(item=>item.type===kind+'_url');assert.ok(item,kind+' result should be detected: '+JSON.stringify(doc.elements));assert.ok(preset.selector.split(', ').includes(item.selector));assert.equal(item.read_mode,'last');
     assert.equal((await page.evaluate(inspectDocument,{...mapping,connected:true})).text,'https://example.com/new.svg');
     assert.equal((await page.evaluate(extractOutputDocument,{mapping})).value,'https://example.com/new.svg');
   }
+});
+
+test('image preview replacement reads the new URL independently of its unchanged description',async t=>{
+  const page=await fixture(t,'<main><div data-testid="generated-image-preview"><img width="240" height="160" src="/old.svg" alt="Generated image"></div></main>');
+  const preset=mediaTargetPresets.find(item=>item.value==='image');
+  const read=()=>page.evaluate(inspectDocument,{connected:true,selector:preset.selector,read_mode:'last',read_attribute:'src'}),before=await read();
+  await page.locator('main').evaluate(main=>main.innerHTML='<div data-testid="generated-image-preview"><img width="240" height="160" src="/new.svg" alt="Generated image"></div><img class="avatar" width="48" height="48" src="/avatar.svg">');
+  await page.waitForFunction(()=>[...document.images].every(image=>image.complete));
+  const after=await read();assert.equal(after.text,'https://example.com/new.svg');assert.equal(observationChanged(after,before),true);assert.equal(after.streaming,false);
+  assert.equal((await page.evaluate(inspectDocument,{connected:true,selector:preset.selector,read_mode:'last',read_attribute:'alt'})).text,'Generated image');
+  assert.equal(observationChanged(await read(),after),false,'a repeated read is not a new generation');
 });

@@ -34,14 +34,14 @@ test('consumer result polling has its own bounded allowance without raising run 
   }finally{await app.close();}
 });
 
-test('isolated retrieval mode explains why generation and submissions need the normal website tab',async()=>{
+test('managed website actions can be recorded without implicitly publishing an API',async()=>{
   process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');
-  const port=4417,{app,store}=await createApp({port,dataDir:resolve('work/isolated-task-guidance',randomBytes(6).toString('hex')),browserEngineFactory:async()=>({closeAll:async()=>{},closeStudios:async()=>{}})});
+  const port=4417,{app,store}=await createApp({port,dataDir:resolve('work/isolated-task-guidance',randomBytes(6).toString('hex')),browserEngineFactory:async()=>({open:async()=>{},closeAll:async()=>{},closeStudios:async()=>{}})});
   let cookie='',csrf='';const call=async(path,body)=>{const response=await app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:'127.0.0.1:'+port,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf}},...body===undefined?{}:{payload:body}});if(response.headers['set-cookie'])cookie=response.headers['set-cookie'].split(';')[0];return response;};
   try{
     csrf=(await call('/studio/session')).json().csrf;csrf=(await call('/studio/setup',{password:'synthetic-task-mode-password'})).json().csrf;
     const stamp=new Date().toISOString();store.db.prepare('INSERT INTO connections VALUES (?,?,?,?,?,?)').run('conn_mode','Saved public page','https://example.com/','connected',store.seal({url:'https://example.com/',origins:['https://example.com'],access:'public',browser_mode:'isolated',identity:{kind:'public_origin',origin:'https://example.com'}}),stamp);
-    for(const type of ['generate_media','submit_form']){const response=await call('/studio/recordings',{connection_id:'conn_mode',name:'Website task',slug:'mode.'+type.replaceAll('_','-'),action_type:type});assert.equal(response.statusCode,409);assert.equal(response.json().error.code,'NORMAL_BROWSER_REQUIRED');assert.match(response.json().error.message,/normal Chrome/);}
-    assert.equal(store.db.prepare('SELECT count(*) n FROM workflows').get().n,0,'Unsupported replay modes cannot produce a misleading draft');
+    for(const type of ['generate_media','submit_form']){const response=await call('/studio/recordings',{connection_id:'conn_mode',name:'Website task',slug:'mode.'+type.replaceAll('_','-'),action_type:type});assert.equal(response.statusCode,200,response.body);assert.ok(response.json().id);assert.equal((await call('/studio/recordings/'+response.json().id+'/discard',{})).statusCode,200);}
+    assert.equal(store.db.prepare('SELECT count(*) n FROM workflows').get().n,0,'Recording setup cannot implicitly publish an API');
   }finally{await app.close();}
 });

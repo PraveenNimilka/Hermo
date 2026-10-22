@@ -79,7 +79,10 @@ export function createLivePreview({chrome,now=Date.now}){
         // document in Chrome 116+. No desktop chooser or unrelated tab is used.
         const streamId=await Promise.race([chrome.tabCapture.getMediaStreamId({targetTabId:session.tabId}),interrupted]);
         if(!valid())throw Error('Preview stopped.');
-        const reply=await Promise.race([message('start',{streamId,nonce:capture.nonce,tabId:session.tabId,expiresAt:capture.expiresAt,idleMs:PREVIEW_IDLE_MS}),interrupted]);
+        const viewport=chrome.scripting?(await chrome.scripting.executeScript({target:{tabId:session.tabId},world:'ISOLATED',func:()=>({width:innerWidth,height:innerHeight})}))[0]?.result:undefined;
+        if(viewport&&(!Number.isInteger(viewport.width)||!Number.isInteger(viewport.height)||viewport.width<1||viewport.height<1||viewport.width>8192||viewport.height>8192))throw Error('The website viewport is unavailable.');
+        if(!valid())throw Error('Preview stopped.');
+        const reply=await Promise.race([message('start',{streamId,nonce:capture.nonce,tabId:session.tabId,expiresAt:capture.expiresAt,idleMs:PREVIEW_IDLE_MS,...viewport?{viewport}:{}}),interrupted]);
         if(!valid())throw Error('Preview stopped.');
         if(!reply?.ok)throw Error('Chrome could not start this tab preview. Open the website and try Enable live preview again.');
         capture.state='live';return {state:'live',expires_at:capture.expiresAt};

@@ -5,4 +5,4 @@
 const streams=['[data-message-author-role="assistant"]','[data-turn="assistant"]','[data-testid="assistant-message"]','[role="log"]'];
 export const mediaTargetPresets=Object.freeze([
   ['image','img'],['video','video'],['audio','audio'],
-].map(([value,tag])=>Object.freeze({value,label:'Latest '+value+' result',selector:streams.map(scope=>scope+' '+tag).join(', '),read_attribute:'src'})));
+].map(([value,tag])=>Object.freeze({value,label:'Latest '+value+' result',selector:[...streams,...value==='image'?['[data-testid="generated-image-preview"]']:[]].map(scope=>scope+' '+tag).join(', '),read_attribute:'src'})));

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve, sep, extname } from 'node:path';
 
-export const apps = Object.freeze(['product-search', 'change-detector', 'json-explorer', 'mcp-tools', 'website-dashboard', 'reliability-lab']);
+export const apps = Object.freeze(['product-search', 'change-detector', 'json-explorer', 'mcp-tools', 'website-dashboard', 'reliability-lab', 'simple-ai-chat', 'approval-console']);
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
 export function validateRuntime(value) {
   const runtime = new URL(value);
@@ -41,8 +41,9 @@ export function createConsumerHost({ app, runtime = 'http://127.0.0.1:4318', por
       }
       if (req.method !== 'GET') return send(405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not supported.' } });
       if (url.pathname === '/config') return send(200, { app, runtime: target });
-      const pathname = url.pathname === '/' ? '/shared/index.html' : url.pathname === '/app.mjs' ? '/' + app + '/app.mjs' : url.pathname;
-      if (!/^\/(shared\/[a-z-]+\.(mjs|css|html)|[a-z-]+\/app\.mjs)$/.test(pathname)) return send(404, { error: { code: 'NOT_FOUND', message: 'File not found.' } });
+      const pathname = url.pathname === '/' ? (app === 'simple-ai-chat' ? '/simple-ai-chat/index.html' : '/shared/index.html') : url.pathname === '/app.mjs' ? '/' + app + '/app.mjs' : url.pathname;
+      const appAsset = pathname.startsWith('/' + app + '/') && /^\/[a-z-]+\/[a-z-]+\.(mjs|css|html)$/.test(pathname);
+      if (!/^\/shared\/[a-z-]+\.(mjs|css|html)$/.test(pathname) && !appAsset) return send(404, { error: { code: 'NOT_FOUND', message: 'File not found.' } });
       const path = resolve(root, '.' + pathname);
       if (!path.startsWith(root + sep) || pathname.endsWith('host.mjs')) return send(404, { error: { code: 'NOT_FOUND', message: 'File not found.' } });
       const contents = await readFile(path);

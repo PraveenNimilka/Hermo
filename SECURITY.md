@@ -40,9 +40,14 @@ retain the same typed extraction and verification rules.
 
 Media hosts are contacted only after an explicit Load preview action. The viewer
 accepts external HTTPS URLs, rejects obvious local/private literal hosts and
-permits only public `/sandbox/` paths on its own runtime origin. This is a browser
-preview check, not a DNS-rebinding-resistant server egress policy. No media proxy
-or server download endpoint exists. Cross-origin previews use anonymous CORS and
+permits public `/sandbox/` paths and bounded local image capability links. This
+is a browser preview check, not a DNS-rebinding-resistant server egress policy.
+Selected page-local raster images can be captured after loading and freshness
+verification: at most 8 MiB each and 128 MiB of captured image bytes in total. Bytes
+are encrypted locally. A random 256-bit link grants read-only access to one
+image for one hour; treat it as a secret. API-key revocation invalidates that
+key’s image links, and run deletion cascades its images. No arbitrary remote
+URL fetch or cookie forwarding is performed. Cross-origin previews use anonymous CORS and
 no-referrer; no Hermo API key is forwarded or placed in links. Opening a direct
 website link uses that browser's normal website session, subject to its policies.
 
@@ -57,7 +62,7 @@ asset persistence, ownership, provider entitlement or safety of a downloaded fil
 
 ### Selected normal-Chrome tab
 
-Website connections default to an explicitly selected normal-Chrome tab. Companion 0.7.0 requires Chrome 120+, and uses activeTab, scripting, storage, alarms, tabCapture and offscreen; its only permanent host permission is loopback. A background service worker polls local Hermo. Bounded tab grants and in-flight markers live in trusted chrome.storage.session, never storage.local. A recovery alarm restores an idle grant after worker suspension, subject to the same runtime lease. Unknown in-flight work disconnects without replay. No additional controller tab is opened in the default flow. No cookies, history or all-websites permission is requested; production has no CDP, debugger, fingerprint patch or verification solver.
+Website connections default to an explicitly selected normal-Chrome tab. Companion 0.7.1 requires Chrome 120+, and uses activeTab, scripting, storage, alarms, tabCapture and offscreen; its only permanent host permission is loopback. A background service worker polls local Hermo. Bounded tab grants and in-flight markers live in trusted chrome.storage.session, never storage.local. A recovery alarm restores an idle grant after worker suspension, subject to the same runtime lease. Unknown in-flight work disconnects without replay. No additional controller tab is opened in the default flow. No cookies, history or all-websites permission is requested; production has no CDP, debugger, fingerprint patch or verification solver.
 
 Owner authentication, CSRF and explicit website/action authorization protect one-use ten-minute pairing codes. Codes are hashed in server memory and bound to owner, connection and exact website origin. Optional password confirmation remains compatible. The runtime credential remains in worker memory; the server stores only its hash. Only four exact companion POST/OPTIONS routes accept extension requests. Wrong-site pairing, replayed codes, unauthenticated replies and unsolicited command IDs fail. Restart, owner expiry, lock, Stop or lost transport ends active access; saved configuration remains. RPCs time out and detach without retrying uncertain actions.
 
@@ -94,11 +99,34 @@ Locking the workspace invalidates that owner session, discards unsaved recording
 
 One local runtime acquires an exclusive SQLite lock in its data directory before loading keys or recovering runs. The OS releases the lock after process death; a leftover lock database is not evidence of a live process. Local filesystem SQLite locking is required. This is single-process ownership, not a distributed lock.
 
-Pairing codes are consumed and physical tab identities reserved before asynchronous browser closure. Tab uniqueness, owner lease and cancellation are checked again before installing a link. Pairing now requires the command_guard capability; an older companion is rejected with instructions to reload 0.7.0. Every mutation rechecks command authority after readiness, and the injected command checks its absolute deadline again. There is still an unavoidable boundary once a website submission has been issued.
+Pairing codes are consumed and physical tab identities reserved before asynchronous browser closure. Tab uniqueness, owner lease and cancellation are checked again before installing a link. Pairing now requires the command_guard capability; an older companion is rejected with instructions to reload 0.7.1. Every mutation rechecks command authority after readiness, and the injected command checks its absolute deadline again. There is still an unavoidable boundary once a website submission has been issued.
 
 Recording, pairing and accepted executions exclude conflicting owner mutations. The current queue is globally serialized, with a maximum of 30 active/queued runs. Abort causes are preserved; active interruption does not erase run provenance. Diagnostics record operations, variable names, timestamps, safe categories and output-failure reasons, never raw browser exceptions, selectors or input literals in step events. Existing encrypted owner input/result payloads remain private data, not automatically redacted data.
 
-Active companion cancellation/timeout invalidates the live link, including pending command authority. Unstarted sibling requests fail as disconnected rather than being silently replayed or reported as cancelled. Explicit Stop cancels accepted work for that connection. A possible submission followed by transport loss, timeout, revocation or runtime interruption has an unknown external outcome; the original cause is retained and automatic retry is prohibited. API receipt reuse remains available after tab disconnection with a still-valid scoped key.
+Cancelling a connected run invalidates that run's command authority without revoking the shared tab grant. Dispatched cancelled commands remain bounded tombstones until their reply or original deadline; mutation reauthorization is denied and late replies are discarded. Sibling work waits for acknowledgement before using the tab. Missing acknowledgement or actual transport loss still ends the link. Explicit Stop cancels accepted work for the whole connection. A possible submission followed by transport loss, timeout, revocation or runtime interruption has an unknown external outcome; the original cause is retained and automatic retry is prohibited. API receipt reuse remains available after tab disconnection with a still-valid scoped key.
+
+Optional per-step owner checkpoints are part of the versioned definition and
+require retesting when changed. Pending approvals carry a random one-use ID
+bound to the accepted run and step. Only authenticated, CSRF-protected owner
+routes may decide; consumer REST/MCP credentials cannot approve. Waiting uses
+the existing run deadline and holds the serialized queue. Browser authority,
+key validity, current origin and live targets are checked again before action;
+the runtime aborts active consumer work when its key expires. Interruption or
+restart never resumes a pending approval automatically.
+
+The permission preview is configuration inspection, not a no-side-effect replay
+or a sandbox for website JavaScript. Exact-origin command scope cannot constrain
+every request, handler, popup or backend operation that the website itself can
+perform. Recorded semantic roles/names or labels must still match a mutation
+target even if a stable ID or CSS selector resolves. Legacy CSS-only recordings
+cannot detect a unique control whose meaning changed. A broad output selection
+can include other visible information, and the current signed-in tab account
+can change. Owners must review those boundaries before publication.
+
+Managed native actions also recheck the resolved element during actionability
+retries. A changed or replaced target closes that run's browser context before
+the waiting action can continue. This checks recorded identity; it cannot infer
+a website's business behavior from an unchanged label or selector.
 
 ## Network and recording constraints
 

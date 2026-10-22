@@ -29,18 +29,25 @@ try{
     try{
       await page.goto(address);await page.locator('#api-key').fill(item.key);
       await page.locator('#endpoint').fill(`/v1/actions/${item.slug}/versions/1/runs`);
+      if(app==='simple-ai-chat'){
+        await page.locator('#connect').click();await page.waitForFunction(()=>!document.querySelector('#message').disabled);
+        await page.locator('#prompt-field').selectOption('category');await page.locator('#message').fill('travel_2');
+        await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled,{},{timeout:180000});
+      }else{
       await page.locator('#load-contract').click();await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Published contract loaded'));
       if(app==='mcp-tools'){await page.locator('#discover-tools').click();await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('authorized tools discovered'));await page.locator('#tool-count').selectOption('2');}
       if(app==='reliability-lab'){await page.locator('#request-count').fill('2');await page.locator('#concurrency').selectOption('2');}
       await page.locator('#run').click();
       await page.waitForFunction(()=>!document.querySelector('#run').disabled,{},{timeout:180000});
+      }
       // The UI and the observer consume response bodies independently.
       await Promise.all([...responses]);
-      assert.ok(executions.size>0,app+': no actual terminal API response; '+await page.locator('#status').textContent());
+      const resultSelector=app==='simple-ai-chat'?'#messages':'#result';
+      assert.ok(executions.size>0,app+': no actual terminal API response; '+await page.locator(app==='simple-ai-chat'?'#run-status':'#status').textContent());
       const runs=[...executions.values()];assert.ok(runs.every(run=>run.status==='succeeded'&&run.result&&run.verification),JSON.stringify({app,runs}));
       if(app==='mcp-tools')assert.equal(runs.length,2,'Both concurrent MCP calls must produce actual verified runs');
       assert.equal(errors.length,0,JSON.stringify(errors));
-      assert.ok((await page.locator('#result').textContent()).includes('managed_local'));
+      assert.ok((await page.locator(resultSelector).textContent()).includes('managed_local'));
       if(app==='change-detector'){
         await page.locator('#run').click();await page.waitForFunction(()=>!document.querySelector('#run').disabled,{},{timeout:120000});
         assert.match(await page.locator('#records').textContent(),/unchanged/i);
@@ -63,7 +70,7 @@ try{
       const desktop=`validation/evidence/${app}-desktop.png`;await page.screenshot({path:desktop});
       await page.setViewportSize({width:375,height:812});
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),app+': horizontal overflow');
-      await page.locator('#result').scrollIntoViewIfNeeded();
+      await page.locator(resultSelector).scrollIntoViewIfNeeded();
       const mobile=`validation/evidence/${app}-mobile.png`;await page.screenshot({path:mobile});
       report.applications.push({app,status:'passed',runs:[...executions.values()].map(run=>({id:run.id,status:run.status,workflow_id:run.workflow_id,revision:run.workflow_revision,execution_mode:run.execution_mode,created_at:run.created_at,verification:run.verification,queue_duration_ms:run.queue_duration_ms,execution_ms:run.execution_ms,record_count:run.result.products?.length??run.result.quotes?.length})),screenshots:{desktop,mobile},page_errors:errors});
       console.log(app+' verified using actual '+item.slug+' API');

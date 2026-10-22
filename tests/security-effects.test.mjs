@@ -10,6 +10,7 @@ test('connected mutations cannot claim retry safety through retrieval metadata',
   for(const op of ['click','fill','select','check']){
     const definition={effect:'retrieval',steps:[{op}]},payload={execution_mode:'connected_chrome'};
     startRun(payload,definition,new Date().toISOString());
+    observeProgress(payload,definition,0,1);
     observeProgress(payload,definition,0,1,{phase:'issuing'});
     const error=runError(Error('TIMEOUT'),payload);
     assert.equal(error.retry_safe,false,op);
@@ -17,10 +18,17 @@ test('connected mutations cannot claim retry safety through retrieval metadata',
   }
 });
 
-test('managed retrieval and non-mutating connected steps retain their execution semantics',()=>{
-  for(const [mode,steps]of [['managed_local',[{op:'click'}]],['connected_chrome',[{op:'navigate'},{op:'wait_text'}]],['connected_chrome',[{op:'click',enabled:false}]]]){
+test('managed DOM actions retain uncertainty despite retrieval networking restrictions',()=>{
+  const definition={effect:'retrieval',steps:[{op:'click'}]},payload={execution_mode:'managed_local'};
+  startRun(payload,definition,new Date().toISOString());observeProgress(payload,definition,0,1);observeProgress(payload,definition,0,1,{phase:'issuing'});
+  assert.equal(payload.submission_may_have_occurred,true);assert.equal(runError(Error('TIMEOUT'),payload).retry_safe,false);assert.equal(runError(Error('TIMEOUT'),payload).outcome,'unknown');
+});
+
+test('non-mutating connected steps retain their execution semantics',()=>{
+  for(const [mode,steps]of [['connected_chrome',[{op:'navigate'},{op:'wait_text'}]],['connected_chrome',[{op:'click',enabled:false}]]]){
     const definition={effect:'retrieval',steps},payload={execution_mode:mode};
     startRun(payload,definition,new Date().toISOString());
+    observeProgress(payload,definition,0,steps.length);
     observeProgress(payload,definition,0,steps.length,{phase:'issuing'});
     assert.equal(payload.submission_may_have_occurred,undefined);
     assert.equal(runError(Error('TIMEOUT'),payload).retry_safe,true);
@@ -44,13 +52,13 @@ test('legacy published contracts expose actual browser effects without rewriting
       const list=await app.inject({method:'POST',url:'/mcp',headers:{...headers,authorization:'Bearer '+secret},payload:{jsonrpc:'2.0',id:1,method:'tools/list',params:{}}});
       assert.equal(list.statusCode,200);
       const action=list.json().result.tools.find(tool=>tool.name==='action_effects_'+mode);
-      assert.equal(action.annotations.readOnlyHint,mode==='isolated');
-      assert.equal(action.annotations.destructiveHint,mode==='connected');
-      assert.equal(action.annotations.idempotentHint,mode==='isolated');
+      assert.equal(action.annotations.readOnlyHint,false,'GET/HEAD restrictions cannot prove browser controls are read-only');
+      assert.equal(action.annotations.destructiveHint,true);
+      assert.equal(action.annotations.idempotentHint,false,'admission deduplication is not website idempotence');
       const revision=store.db.prepare('SELECT * FROM workflow_revisions WHERE workflow_id=?').get(wid);
       const saved=store.unseal(revision.payload);
       const spec=(await createSpec(wid,saved,revision.version)).info.description;
-      assert.equal(spec.startsWith('Verified retrieval action.'),mode==='isolated');
+      assert.equal(spec.startsWith('Verified retrieval action.'),false,'both modes disclose browser action effects');
       assert.deepEqual(saved.definition,definition);
       assert.equal(saved.definition.effect,'retrieval');
       assert.equal(store.db.prepare('SELECT payload FROM workflow_revisions WHERE workflow_id=?').get(wid).payload,revision.payload);

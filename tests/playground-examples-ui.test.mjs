@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomBytes,randomUUID} from 'node:crypto';
+import {createServer} from 'node:net';
+import {mkdirSync,readFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium} from 'playwright';
+import {createApp} from '../server/index.mjs';
+import {hash} from '../server/store.mjs';
+import {verifyResult} from '../server/verification.mjs';
+import {convertOutputs} from '../server/workflow-contract.mjs';
+
+test('playground JSON editor validates before admission and downloads only sanitized samples',{timeout:70000},async()=>{
+  const oldMaster=process.env.HERMO_MASTER_KEY;process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');
+  const reservation=createServer();await new Promise(done=>reservation.listen(0,'127.0.0.1',done));const port=reservation.address().port;await new Promise(done=>reservation.close(done));
+  const dataDir=resolve('work/playground-examples-ui',randomUUID());mkdirSync(dataDir,{recursive:true});let state,browser,page,cookie='',csrf='';const executed=[],requests=[],errors=[];
+  const engine={isOpen:()=>true,closeAll:async()=>{},closeStudios:async()=>{},execute:async(_connection,definition,input,progress)=>{executed.push(input);progress(0,1);progress(0,1,{phase:'completed'});progress(1,1,{phase:'verifying'});const raw={value:'PRIVATE_ACTUAL_RESULT'};return{result:convertOutputs(definition.outputs,raw),verification:verifyResult(definition,raw,input,'controlled_playground_ui')};}};
+  try{
+    state=await createApp({port,dataDir,browserEngineFactory:async()=>engine});const {app,store,origin}=state;
+    const call=async(path,body)=>{const response=await app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:`127.0.0.1:${port}`,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf}},...body===undefined?{}:{payload:body}});if(response.headers['set-cookie']?.startsWith('hermo_owner_'))cookie=response.headers['set-cookie'].split(';')[0];assert.ok(response.statusCode<300,response.body);return response.json();};
+    csrf=(await call('/studio/session')).csrf;csrf=(await call('/studio/setup',{password:'synthetic-playground-owner'})).csrf;
+    const wid='playground_export',cid='playground_export_connection',base='/studio/workflows/'+wid,at=new Date().toISOString(),connection={url:origin+'/sandbox/export',origins:[origin],access:'public',browser_mode:'isolated',identity:{kind:'public_origin',origin}};
+    store.db.prepare('INSERT INTO connections VALUES (?,?,?,?,?,?)').run(cid,'Playground fixture browser',connection.url,'connected',store.seal(connection),at);
+    const definition={contract_version:'2',effect:'retrieval',inputs:{message:{type:'string',required:true,example:'PRIVATE_CONTRACT_EXAMPLE'},quantity:{type:'integer',required:true,minimum:1,default:2},optional:{type:'boolean',required:false}},steps:[{op:'click',selector:'#fixture-read'}],outputs:[{name:'value',type:'string',selector:'#fixture-result'}],verifiers:[{kind:'nonempty',output:'value'}],timeout_ms:15000};definition.version=hash(JSON.stringify(definition));
+    store.db.prepare('INSERT INTO workflows VALUES (?,?,?,?,?,?,?,?,?)').run(wid,cid,'Playground export fixture','playground.export','draft',definition.version,store.seal(definition),null,at);
+    const tested=await call(base+'/test',{input:{message:'PRIVATE_TEST_INPUT'}});for(let n=0;n<200;n++){const run=await call('/studio/runs/'+tested.run_id);if(run.status==='succeeded')break;if(run.status==='failed')assert.fail(JSON.stringify(run));await new Promise(done=>setTimeout(done,20));}
+    const review=await call(base+'/permissions'),published=await call(base+'/publish',{expected_version:review.version,permission_fingerprint:review.fingerprint});await app.listen({port,host:'127.0.0.1'});
+    browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce',acceptDownloads:true});await context.addCookies([{name:`hermo_owner_${port}`,value:cookie.split('=')[1],url:origin+'/studio',httpOnly:true,sameSite:'Strict'}]);page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname.startsWith('/v1/actions/'))requests.push(request.postDataJSON());});
+    await page.goto(origin);await page.getByRole('button',{name:'API docs',exact:true}).click();const playground=page.locator('.api-playground');await playground.getByLabel('Scoped API key',{exact:true}).fill(published.key);await playground.getByRole('button',{name:'Connect key',exact:true}).click();await playground.getByLabel('Published revision',{exact:true}).waitFor();
+    await playground.getByRole('button',{name:'JSON editor',exact:true}).click();const editor=playground.getByLabel('Request JSON editor',{exact:true}),submit=playground.getByRole('button',{name:'Run API request',exact:true});
+    await editor.fill('{"input":{"message":42}}');await submit.click();await playground.getByRole('alert').filter({hasText:'expected a JSON string'}).waitFor();assert.equal(requests.length,0);
+    await editor.fill('{"input":{"message":"PRIVATE_ACTUAL_INPUT","quantity":4,"optional":false}}');await playground.getByRole('button',{name:'Form fields',exact:true}).click();assert.equal(await playground.getByLabel('message',{exact:true}).inputValue(),'PRIVATE_ACTUAL_INPUT');assert.equal(await playground.getByLabel('quantity',{exact:true}).inputValue(),'4');assert.equal(await playground.getByLabel('optional',{exact:true}).inputValue(),'false');
+    await playground.getByRole('button',{name:'JSON editor',exact:true}).click();assert.deepEqual(JSON.parse(await editor.inputValue()),{input:{message:'PRIVATE_ACTUAL_INPUT',quantity:4,optional:false}});
+    await editor.fill('{"input":{"message":"PRIVATE_ACTUAL_INPUT"}}');await submit.click();await playground.getByText('Verified result received.',{exact:true}).waitFor();assert.deepEqual(requests[0],{input:{message:'PRIVATE_ACTUAL_INPUT'},expected_revision:1});assert.deepEqual(executed.at(-1),{message:'PRIVATE_ACTUAL_INPUT',quantity:2});
+    for(const name of ['Download Markdown','Download sample JSON','Download cURL','Download Node.js client']){const pending=page.waitForEvent('download');await playground.getByRole('button',{name,exact:true}).click();const download=await pending,path=await download.path(),text=readFileSync(path,'utf8');for(const secret of [published.key,'PRIVATE_ACTUAL_INPUT','PRIVATE_ACTUAL_RESULT','PRIVATE_CONTRACT_EXAMPLE'])assert.equal(text.includes(secret),false,`${name} excludes ${secret.slice(0,15)}`);assert.match(text,/revisions\/1\/runs/);if(name==='Download sample JSON')assert.equal(JSON.parse(text).kind,'hermo-sanitized-api-example');}
+    for(const language of ['typescript','mcp']){await playground.getByLabel('Code example',{exact:true}).selectOption(language);assert.equal((await playground.getByLabel(`${language} example`,{exact:true}).textContent()).includes('PRIVATE_ACTUAL_INPUT'),false);}
+    for(const width of [1440,375]){await page.setViewportSize({width,height:1000});await playground.getByRole('button',{name:'JSON editor',exact:true}).scrollIntoViewIfNeeded();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);assert.equal(await playground.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true);await page.screenshot({path:join(dataDir,`playground-${width}.png`)});}
+    assert.equal((await page.content()).includes(published.key),false);assert.equal(await page.evaluate(key=>JSON.stringify({...localStorage,...sessionStorage}).includes(key),published.key),false);assert.deepEqual(errors,[]);
+  }catch(error){if(page)await page.screenshot({path:join(dataDir,'failure.png')});throw error;}finally{await browser?.close();await state?.app.close();if(oldMaster===undefined)delete process.env.HERMO_MASTER_KEY;else process.env.HERMO_MASTER_KEY=oldMaster;}
+});

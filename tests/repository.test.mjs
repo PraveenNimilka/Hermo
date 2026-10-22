@@ -24,6 +24,11 @@ test('repository rules detect nested milestone reports and Windows path separato
   assert.equal(repositoryIssues(paths).length,paths.length);
 });
 
+test('maintained verification guide has a narrow exception without permitting generated reports',()=>{
+  assert.deepEqual(repositoryIssues(['docs/testing/verification-report.md']),[]);
+  assert.equal(repositoryIssues(['docs/testing/temporary-report.md','docs/testing/verification-report.json']).length,2);
+});
+
 test('product documentation keeps development-tool setup links separate from operating guides',()=>{
   const text='[Setup](https://github.com/example/interface-skills/tree/main)';
   assert.equal(repositoryIssues(['README.md'],()=>text).length,1);

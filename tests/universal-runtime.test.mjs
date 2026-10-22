@@ -71,7 +71,8 @@ test('private selected-tab tasks with no visible account identity create APIs fo
   let cookie='',csrf='',context,cdp,connection;
   const password='synthetic-universal-workspace-password';
   const call=async(path,body,extra={})=>{const response=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{...cookie?{cookie}:{},...body===undefined?{}:{'content-type':'application/json','x-hermo-csrf':csrf},...extra},body:body===undefined?undefined:JSON.stringify(body)});const set=response.headers.get('set-cookie');if(set?.startsWith('hermo_owner_'))cookie=set.split(';')[0];return {status:response.status,value:await response.json()};};
-  const ok=async(...args)=>{const response=await call(...args);assert.ok(response.status<300,JSON.stringify(response));return response.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(...args)=>{if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(args[0])){const review=await ok(args[0].replace(/\/publish$/,'/permissions'));args[1]={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...args[1]};}const response=await call(...args);assert.ok(response.status<300,JSON.stringify(response));return response.value;};
   const finish=async(runId,headers)=>{for(let i=0;i<180;i++){const run=await ok((headers?'/v1/runs/':'/studio/runs/')+runId,undefined,headers);if(['succeeded','failed','cancelled'].includes(run.status))return run;await new Promise(done=>setTimeout(done,300));}throw Error('Synthetic run did not finish');};
   async function evaluateTarget(targetId,expression){const {sessionId}=await cdp.send('Target.attachToTarget',{targetId,flatten:false});try{return await new Promise((resolve,reject)=>{const listener=event=>{if(event.sessionId!==sessionId)return;const value=JSON.parse(event.message);if(value.id!==1)return;clearTimeout(timer);cdp.off('Target.receivedMessageFromTarget',listener);if(value.error||value.result?.exceptionDetails)reject(Error(JSON.stringify(value)));else resolve(value.result.result.value);};const timer=setTimeout(()=>{cdp.off('Target.receivedMessageFromTarget',listener);reject(Error('Extension evaluation timed out'));},15000);cdp.on('Target.receivedMessageFromTarget',listener);cdp.send('Target.sendMessageToTarget',{sessionId,message:JSON.stringify({id:1,method:'Runtime.evaluate',params:{expression,awaitPromise:true,returnByValue:true}})}).catch(reject);});}finally{await cdp.send('Target.detachFromTarget',{sessionId}).catch(()=>{});}}
   try{
@@ -174,7 +175,7 @@ test('private selected-tab tasks with no visible account identity create APIs fo
       const card=ui.locator('.connection-card').filter({has:ui.getByRole('heading',{name:'Universal website tasks',exact:true})});
       await card.getByRole('button',{name:'Open browser',exact:true}).click();
       await ui.getByRole('button',{name:'Detected fields',exact:true}).click();await ui.locator('.browser-dom-preview').waitFor();
-      await ui.locator('.connected-tab-setup > summary').click();
+      if(await ui.locator('.connected-tab-setup').getAttribute('open')===null)await ui.locator('.connected-tab-setup > summary').click();
       await ui.getByRole('checkbox',{name:/I authorize Hermo to read this website tab/}).check();
       await ui.getByRole('button',{name:'Create Connect code',exact:true}).click();
       await ui.locator('.normal-chrome-grant input').waitFor();

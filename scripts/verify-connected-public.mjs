@@ -30,7 +30,8 @@ async function request(path,body,{key,headers={},allowFailure=false}={}){
   const value=await response.json();if(!allowFailure)assert.ok(response.ok,`${path}: HTTP ${response.status}; ${value.error?.code??'request rejected'}`);
   return {status:response.status,value};
 }
-const owner=async(path,body)=>(await request(path,body)).value;
+// This fixture owner explicitly reviews and authorizes configured publication changes.
+const owner=async(path,body)=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await owner(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}return (await request(path,body)).value;};
 async function wait(receipt,key){
   for(let i=0;i<100;i++){const value=(await request((key?'/v1':'/studio')+'/runs/'+receipt.run_id,undefined,{key})).value;if(['succeeded','failed','cancelled'].includes(value.status))return value;await sleep(500);}
   throw Error('Run polling deadline');

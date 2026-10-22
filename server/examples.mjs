@@ -75,7 +75,13 @@ export function installExamples(app,{origin,store,fail,rate},{specs=exampleApps,
       job.stage=`Verifying ${spec.name}`;
       const tested=await wait((await call(`/studio/workflows/${w.id}/test`,{input:{[spec.parameter]:spec.samples[1]}},headers)).run_id,headers);if(tested.status!=='succeeded'||!matches(spec,tested.result,1))throw new Error('EXAMPLE_VERIFICATION_FAILED');
       if(saved?.key_id)await call(`/studio/keys/${saved.key_id}/revoke`,{},headers);
-      const published=await call(`/studio/workflows/${w.id}/publish`,{},headers),consumerHeaders={authorization:'Bearer '+published.key,'idempotency-key':randomBytes(16).toString('hex')};
+      const permissions=await call(`/studio/workflows/${w.id}/permissions`,undefined,headers);
+      // Setup explicitly authorizes these fixed practice integrations. Refuse
+      // any expanded authority instead of treating a fetched manifest as consent
+      // to arbitrary future changes in their definitions.
+      const expectedOrigin=new URL(spec.url??origin+spec.path).origin;
+      if(permissions.allowed_origins.length!==1||permissions.allowed_origins[0]!==expectedOrigin||permissions.connection.mode!=='managed_local'||permissions.approval_steps.length||permissions.allowed_actions.some(op=>!['navigate','fill','click'].includes(op))||permissions.changes?.breaking||permissions.changes?.permission_review_required)throw Object.assign(Error('EXAMPLE_PERMISSIONS_CHANGED'),{code:'EXAMPLE_PERMISSIONS_CHANGED'});
+      const published=await call(`/studio/workflows/${w.id}/publish`,{expected_version:permissions.version,permission_fingerprint:permissions.fingerprint},headers),consumerHeaders={authorization:'Bearer '+published.key,'idempotency-key':randomBytes(16).toString('hex')};
       const item={id:spec.id,connection_id:c.id,workflow_id:w.id,slug:w.slug,key_id:published.id,key:published.key};items.push(item);save([...items,...previous.filter(p=>!items.some(i=>i.id===p.id))]);
       const verified=await wait((await call(`/v1/actions/${w.slug}/versions/1/runs`,{input:{[spec.parameter]:spec.samples[0]}},consumerHeaders)).run_id,consumerHeaders,true);if(verified.status!=='succeeded'||!matches(spec,verified.result,0))throw new Error('EXAMPLE_API_FAILED');
       await call(`/studio/connections/${c.id}/close`,{},headers);job.progress=Math.round((index+1)*90/specs.length);
