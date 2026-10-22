@@ -4,6 +4,16 @@ import {repairChatDefinition} from '../server/repair-chat.mjs';
 
 const draft=()=>({inputs:{prompt:{type:'string',example:'first'}},steps:[{op:'navigate',url:'https://chatgpt.com/'},{op:'fill',selector:'#old-editor',parameter:'prompt'},{op:'click',selector:'#obsolete-sidebar'},{op:'click',selector:'[aria-label="Send"]'},{op:'click',selector:'[aria-label="Copy"]'}],outputs:[{name:'prompt_echo',selector:'#old-user'},{name:'response',selector:'#old-assistant'}]});
 const editor=[{kind:'input',type:'editor',selector:'[aria-label="Ask\\ ChatGPT"]'}];
+
+test('repair preserves stable action identities and approval authority without moving removed gates',()=>{
+  const value=draft();value.steps[1]={...value.steps[1],id:'step_original_fill',approval_required:true,risk:'high',label:'Recorded prompt',timeout_ms:2000};value.steps[3].id='step_original_send';
+  value.approval_policy={mode:'selected_steps',steps:[2,4]};
+  const fixed=repairChatDefinition(value,editor,{url:'https://chatgpt.com/'});
+  assert.deepEqual(fixed.steps.map(step=>step.id),['step_original_fill','step_original_send']);assert.equal(fixed.steps[0].approval_required,true);assert.equal(fixed.steps[0].risk,'high');assert.equal(fixed.steps[0].timeout_ms,2000);
+  assert.deepEqual(fixed.approval_policy,{mode:'selected_steps',steps:[1,2]});assert.deepEqual(value.approval_policy.steps,[2,4]);
+  value.approval_policy={mode:'every_invocation'};assert.deepEqual(repairChatDefinition(value,editor,{url:'https://chatgpt.com/'}).approval_policy,value.approval_policy);
+  value.approval_policy={mode:'selected_steps',steps:[1]};assert.throws(()=>repairChatDefinition(value,editor,{url:'https://chatgpt.com/'}),{message:'CHAT_REPAIR_NOT_READY'});
+});
 test('repair a positional ChatGPT draft on an empty new chat without a prior reply',()=>{
   const d=draft(),before=structuredClone(d),fixed=repairChatDefinition(d,editor,{url:'https://chatgpt.com/'});
   assert.deepEqual(d,before,'repair construction does not mutate the existing definition');

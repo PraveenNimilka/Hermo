@@ -1,8 +1,8 @@
 # Hermo consumer applications
 
-Six independent applications exercise the **public, scoped Hermo REST and MCP interfaces**. They do not import Hermo server functions, read its database, or request target websites directly. The applications contain no sample success responses or seeded metrics.
+Eight independent applications exercise the **public, scoped Hermo REST and MCP interfaces**. They do not import Hermo server functions, read its database, or request target websites directly. The applications contain no sample success responses or seeded metrics.
 
-Node.js 24 or newer is required. No additional packages or build step are needed. The lightweight browser modules use native HTML controls and a shared monochrome design system; this avoids six copies of a framework and keeps each consumer independently runnable.
+Node.js 24 or newer is required. No additional packages or build step are needed. The lightweight browser modules use native HTML controls and a monochrome design system; this avoids multiple copies of a framework and keeps each consumer independently runnable.
 
 ## Start an application
 
@@ -16,6 +16,38 @@ Start the independent Hermo runtime first, using the main repository instruction
 | Hermo MCP Tools | `node validation-apps/start.mjs mcp-tools` | `http://127.0.0.1:4504` |
 | Website Records Dashboard | `node validation-apps/start.mjs website-dashboard` | `http://127.0.0.1:4505` |
 | Hermo Reliability Lab | `node validation-apps/start.mjs reliability-lab` | `http://127.0.0.1:4506` |
+| Hermo conversation tester | `npm run chat:test` | `http://127.0.0.1:4507` |
+| Workflow Approval Console | `node validation-apps/start.mjs approval-console` | `http://127.0.0.1:4508` |
+
+### Hermo conversation tester
+
+Run `npm run chat:test`, then open `http://127.0.0.1:4507`. This command connects
+to Hermo on port **4317**, matching the main runtime's default. For a different
+runtime, use `node validation-apps/start.mjs simple-ai-chat --runtime http://127.0.0.1:4318`.
+
+Paste a published workflow's scoped key and select **Connect key**. The app
+detects the workflow endpoint; an optional pasted endpoint must match the configured
+runtime and authorized workflow. Choose the string input for your message and the
+output for the reply. Supply any other required fields under **Additional inputs**.
+Send a message to execute the workflow and poll its real run status. Successful,
+verified results appear as replies with expandable raw JSON. Structured results
+can be displayed as JSON. Keys and chat history remain in tab memory only.
+
+Each message is an independent workflow call; the displayed chat history is not
+automatically sent to the workflow. **Stop waiting** pauses local observation;
+**Resume checking** continues polling, and **Cancel run** requests cancellation.
+An uncertain admission can be recovered with the same input and idempotency key.
+Clear chat becomes available after the current request is resolved. Cancellation
+cannot undo website changes already made. No separate provider key is needed by this
+client; the published Hermo workflow must already be configured and working.
+
+For disposable browser checks without a live account, run
+`node scripts/verify-chat-app.mjs` from the repository root. It uses Playwright
+Chromium, or the installed Chrome on Windows; set `HERMO_BROWSER_PATH` to choose
+a browser executable. Fixture checks cover replies, errors, request recovery,
+cancellation and desktop/mobile layouts. They do not prove live provider compatibility.
+
+### Other consumer apps
 
 For a different runtime or app port:
 
@@ -30,6 +62,13 @@ The configured runtime is the only forwarding destination. Pasting a URL does no
 API keys stay in the current browser tab's memory. They are never written to files or browser storage by these applications. Closing or reloading the consumer page clears the key. The change detector saves extracted observations, run IDs and verification evidence in this browser's local storage; it explicitly excludes keys. Treat exported website data and observations according to their sensitivity.
 
 ## Create the workflows
+
+For a self-contained table, form-approval and MCP demonstration using a disposable
+local website, run `node scripts/verify-trusted-execution.mjs`. It records,
+tests and publishes through owner HTTP routes, exercises three consumer UIs and
+the SDK MCP client, and checks deliberate failures. No external account is used.
+Reports are written to ignored `validation/results/`. The approval console
+displays pending checkpoints; only the separate owner dashboard can decide them.
 
 Use an isolated validation workspace for testing and preserve your existing Hermo workspace. Connect an authorized real website, create its workflow through Hermo, select dynamic navigation inputs and structured outputs, test against the website, and publish only a verified result. Public-site workflows must respect the target site's current rules. Do not assume another website has equivalent selectors or permissions.
 
@@ -63,7 +102,7 @@ not establish live-site compatibility.
 - **Product Search Explorer:** select a supported category, run, inspect actual product fields and raw JSON, then filter returned titles. Missing records do not produce fabricated products.
 - **Website Change Detector:** make a verified observation; the next observation of the same workflow and inputs is classified as changed or unchanged using canonical structured output. Failed runs never replace a successful observation. Export timestamped local history as JSON. Unchanged public website data is a valid result.
 - **Website-to-JSON Explorer:** navigate with the dynamic inputs, inspect repeated records, nested columns, optional absence and arrays, filter returned data, and export only the verified response with its run ID and evidence.
-- **Hermo MCP Tools:** discover tools available to the current scoped key, inspect their schemas, invoke one or two concurrent authorized workflow calls, and poll `get_run` through `/mcp`. Discovery is refreshed before execution; browser execution remains serialized by Hermo. No language model is configured; this client does not pretend to generate AI answers.
+- **Hermo MCP Tools:** discover tools available to the current scoped key, inspect their schemas, invoke one or two concurrent authorized workflow calls, and poll `get_run` through `/mcp`. Discovery is refreshed before execution; browser execution remains serialized by Hermo. This client invokes published tools and displays their verified results.
 - **Website Records Dashboard:** select a supported page, load its records and inspect details. The run shows its pinned revision and actual execution mode. Filters affect returned data; they do not pretend to execute a target-site search.
 - **Hermo Reliability Lab:** use a budget of 1–6 requests, concurrency 1–2 and at least 1.5 seconds between admissions. Compare fresh request IDs with duplicate idempotency keys. Observe actual run IDs, revisions, queue wait, execution duration, failures and verification. Stop further admissions without misrepresenting already admitted runs as cancelled. Export measured results.
 
@@ -93,7 +132,7 @@ To check revision stability, edit a draft safely in Hermo, execute the consumer 
 node --test --test-concurrency=1 validation-apps/tests/*.test.mjs
 ```
 
-The isolated regression suite covers all six app hosts, public-route boundaries, origin protection, secret forwarding, input validation, real protocol construction, polling, uncertainty, MCP errors, nested records, optional values, observation comparisons and bounded load. Its transport fixtures are explicitly identified; they are **not substitutes for live external acceptance**.
+The isolated regression suite covers all eight app hosts, public-route boundaries, origin protection, secret forwarding, input validation, real protocol construction, polling, uncertainty, MCP errors, nested records, optional values, observation comparisons and bounded load. Its transport fixtures are explicitly identified; they are **not substitutes for live external acceptance**.
 
 For machine-readable isolated test output:
 

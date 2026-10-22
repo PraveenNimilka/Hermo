@@ -31,7 +31,8 @@ async function request(path,body,{key,method,headers={},allowFailure=false}={}){
   if(owner&&response.headers.get('set-cookie'))cookie=response.headers.get('set-cookie').split(';')[0];
   const value=await response.json();if(!allowFailure)assert.ok(response.ok,JSON.stringify({path,status:response.status,value}));return {status:response.status,value};
 }
-const owner=async(path,body)=>(await request(path,body)).value;
+// This fixture owner explicitly reviews and authorizes configured publication changes.
+const owner=async(path,body)=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/rollback$/.test(path)){const base=path.replace(/\/rollback$/,''),history=await owner(base+'/revisions'),review=await owner(base+'/revision-diff?from='+history.active_revision+'&to='+body.revision);body={...(review.changes?{change_fingerprint:review.changes.fingerprint,accept_breaking:true,permissions_reviewed:true}:{}),...body};}if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await owner(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}return (await request(path,body)).value;};
 async function login(setup=false){cookie='';csrf=(await owner('/studio/session')).csrf;csrf=(await owner('/studio/'+(setup?'setup':'login'),{password})).csrf;}
 async function wait(receipt,key){for(let i=0;i<130;i++){const value=(await request((key?'/v1':'/studio')+'/runs/'+receipt.run_id,undefined,{key})).value;if(['succeeded','failed','cancelled'].includes(value.status))return value;await sleep(750);}throw Error('Run polling deadline');}
 const run=async(item,input,options={})=>wait((await request(`/v1/actions/${item.slug}/versions/1/runs`,{input},{key:item.key,headers:{'idempotency-key':randomUUID()},...options})).value,item.key);

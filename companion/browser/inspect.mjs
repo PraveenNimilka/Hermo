@@ -23,14 +23,15 @@ export function inspectDocument(target) {
   const label=el=>el.getAttribute('aria-label')||(el.getAttribute('aria-labelledby')??'').split(/\s+/).map(id=>el.getRootNode().getElementById?.(id)?.textContent??'').join(' ').trim()||labelText(el)||el.getAttribute('placeholder')||el.getAttribute('data-placeholder')||el.querySelector('[data-placeholder]')?.getAttribute('data-placeholder')||(editor(el)?'Message':el.tagName==='SELECT'?(el.getAttribute('title')||'Choose an option'):el.textContent)||el.getAttribute('title')||el.getAttribute('name')||el.tagName.toLowerCase();
   const text=el=>(el.innerText??el.textContent??'').trim();
   // Media is read from a user-selected rendered element. Never fetch an asset,
-  // serialize pixels, or turn page-local blob/data addresses into public URLs.
+  // serialize pixels or expose data addresses. Page-local image addresses stay
+  // internal until a separate guarded capture creates a bounded local asset.
   const mediaAttributes=new Set(['src','href','alt','download','poster']);
   const assetValue=(el,attribute)=>{
     if(!mediaAttributes.has(attribute))return '';
     if(attribute==='alt'||attribute==='download')return (el.getAttribute(attribute)??'').trim().slice(0,4096);
     const raw=attribute==='src'?(el.currentSrc||el.getAttribute('src')||el.querySelector('source[src]')?.getAttribute('src')):el.getAttribute(attribute);
     if(!raw)return '';
-    try{const url=new URL(raw,location.href);return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password&&url.href.length<=4096?url.href:'';}catch{return '';}
+    try{const url=new URL(raw,location.href);return (['https:','http:'].includes(url.protocol)||el.matches('img')&&url.protocol==='blob:'&&url.origin===location.origin)&&!url.username&&!url.password&&url.href.length<=4096?url.href:'';}catch{return '';}
   };
   const mediaPending=el=>el.matches('img')&&(!el.complete||el.naturalWidth===0)||el.matches('video,audio')&&el.readyState<1||!!el.closest('[aria-busy="true"],[data-is-generating="true"],[data-is-streaming="true"]');
   const resultMedia=el=>!el.closest('nav,header,aside,[role="navigation"],[data-hermo-ui]')&&!/(?:avatar|profile|account|logo|icon)/i.test(['id','class','data-testid'].map(name=>el.getAttribute(name)??'').join(' '))&&(!el.matches('img')||el.getBoundingClientRect().width>=32&&el.getBoundingClientRect().height>=32);
@@ -43,6 +44,7 @@ export function inspectDocument(target) {
     const candidates=matches.filter(el=>visible(el)&&(target.read_mode!=='last'||!['src','poster','alt'].includes(target.read_attribute)||resultMedia(el))),el=target.read_mode==='last'?candidates.at(-1):candidates.length===1?candidates[0]:undefined;
     if(!el)return {hermo_error:'ACTION_UNAVAILABLE'};
     const value=assetValue(el,target.read_attribute);
+    if(!value&&target.read_attribute==='src'&&el.matches('img')&&el.complete&&el.naturalWidth>0&&(el.currentSrc||el.getAttribute('src')))return {hermo_error:'MEDIA_UNSUPPORTED'};
     return {text:value,count:candidates.length,streaming:mediaPending(el)||generating()};
   }
   const messageText=el=>{
@@ -133,8 +135,9 @@ export function inspectDocument(target) {
   // inside an explicit speaker/result stream; ordinary catalog images retain
   // their individually selected locator.
   const latestMedia=new Map();
-  if(target?.connected)for(const query of ['[data-message-author-role="assistant"]','[data-turn="assistant"]','[data-testid="assistant-message"]','[role="log"]']){
+  if(target?.connected)for(const query of ['[data-message-author-role="assistant"]','[data-turn="assistant"]','[data-testid="assistant-message"]','[role="log"]','[data-testid="generated-image-preview"]']){
     for(const root of roots)for(const tag of ['img','video','audio']){
+      if(query==='[data-testid="generated-image-preview"]'&&tag!=='img')continue;
       const candidates=[...root.querySelectorAll(query+' '+tag)].filter(el=>visible(el)&&resultMedia(el));
       const el=candidates.at(-1);if(!el||latestMedia.has(el))continue;
       const prefix=root.host?safeSelector(root.host):'';if(root.host&&!prefix)continue;

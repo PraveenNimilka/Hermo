@@ -7,28 +7,36 @@
   <link rel="icon" href="hermo-crab.png">
   <link rel="stylesheet" href="browser.css">
 </head>
-<body>
+<body class="popup" data-connection="disconnected">
 <main>
-  <header class="companion-brand"><img src="hermo-crab.png" width="32" height="32" alt=""><strong>hermo</strong><span>Companion</span></header>
-  <div class="intro"><h1>Connect this tab</h1><p>Turn this website into a reusable local API.</p></div>
-  <div class="website-region"><span>Selected Chrome tab</span><p id="website">Checking website…</p></div>
+  <header class="companion-brand"><img src="hermo-crab.png" width="32" height="32" alt=""><strong>hermo</strong><span class="connection-badge"><i aria-hidden="true"></i><span id="connection-label">Companion</span></span></header>
+  <div class="intro"><h1 id="companion-heading">A little help, right here.</h1><p id="companion-description">Connect this tab to your local workspace.</p></div>
+  <div class="website-region"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a18 18 0 0 1 0 18 18 18 0 0 1 0-18Z"/></svg><div><span>Selected website</span><p id="website">Checking website…</p></div></div>
+  <section id="connected-state" aria-label="Connected tab" hidden>
+    <div class="connection-summary"><span class="connection-tick" aria-hidden="true">✓</span><div><h2 id="connection-name">This tab is connected</h2><p>Your sign-in stays in Chrome.</p></div></div>
+    <button id="open-workspace" type="button">Open Hermo <span aria-hidden="true">↗</span></button>
+    <div class="connection-actions"><button id="reconnect-tab" type="button" class="text-button">Reconnect this tab</button><button id="disconnect-tab" type="button" class="text-button">Disconnect</button></div>
+  </section>
   <form id="pair" aria-describedby="pair-hint">
-    <div class="form-field"><label for="code">Connect code<input id="code" type="password" autocomplete="off" required spellcheck="false" aria-describedby="pair-hint"></label><span id="pair-hint" class="hint">Copy a fresh code from Connections in Hermo.</span></div>
-    <details class="runtime-settings"><summary>Local runtime address</summary><div class="form-field"><label for="workspace">Local Hermo address<input id="workspace" type="url" value="http://127.0.0.1:4318" required spellcheck="false" aria-describedby="workspace-hint"></label><span id="workspace-hint" class="hint">Your local runtime must be running.</span></div></details>
-    <label class="consent" for="authorize"><input id="authorize" type="checkbox" required><span>I authorize reading this tab and replaying my workflows using its signed-in account. Actions may submit forms. No cookies or passwords are copied.</span></label>
+    <div class="form-field"><label for="code">Connect code<input id="code" type="password" autocomplete="off" required spellcheck="false" placeholder="Paste your Connect code" aria-describedby="pair-hint"></label><span id="pair-hint" class="hint">From Connections in your Hermo workspace.</span></div>
+    <details class="runtime-settings"><summary>Local runtime address</summary><div class="form-field"><label for="workspace">Local Hermo address<input id="workspace" type="url" value="http://127.0.0.1:4317" required spellcheck="false" aria-describedby="workspace-hint"></label><span id="workspace-hint" class="hint">Your local runtime must be running.</span></div></details>
+    <label class="consent" for="authorize"><input id="authorize" type="checkbox" required><span>I allow Hermo to read this tab and replay my workflows using its signed-in account. Actions may submit forms. Cookies and passwords stay in Chrome.</span></label>
     <button id="connect" type="submit">Connect selected tab</button>
   </form>
+  <button id="cancel-reconnect" class="text-button" type="button" hidden>Keep current connection</button>
   <p id="status" role="status" aria-live="polite" tabindex="-1"></p>
-  <section id="live-preview" aria-labelledby="preview-heading">
-    <h2 id="preview-heading">Live website preview</h2>
-    <p class="note">Optional: show this tab inside Hermo. Video only, no audio. Sharing stops after 15 minutes, 2 minutes without preview requests, or when the connection ends.</p>
+  <button id="open-hermo-reconnect" type="button" class="secondary" hidden>Open Hermo to reconnect</button>
+  <section id="live-preview" aria-labelledby="preview-heading" data-preview="disabled">
+    <div class="section-heading"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><h2 id="preview-heading">Website preview</h2><span id="preview-label">Off</span></div>
+    <p class="note">See this tab inside Hermo. No audio is shared.</p>
     <div class="preview-actions"><button id="preview-enable" type="button" class="secondary" disabled>Enable live preview</button><button id="preview-stop" type="button" hidden>Stop preview</button></div>
     <p id="preview-status" role="status" aria-live="polite">Connect this tab first.</p>
+    <details class="preview-limits"><summary>Sharing limits</summary><p class="note">Sharing stops after 15 minutes, 2 minutes without preview requests, or when this connection ends.</p></details>
   </section>
-  <p class="note permission-note">Only this tab and website origin are authorized. The popup can close. Use Stop on the website to end access. Complete sign-in directly on the website.</p>
+  <p class="note permission-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m12 3 8 4v5c0 5-8 9-8 9s-8-4-8-9V7Z"/><path d="m8 12 3 3 5-6"/></svg><span>One tab. Your control. Stop access anytime.<br>Complete sign-in directly on the website.</span></p>
   <details><summary>Advanced connection tools</summary><p class="note">Use a separate controller tab only when troubleshooting the standard connection.</p><button id="open-connection-page" class="secondary" type="button">Open connection page</button></details>
-  <details><summary>Inspect chat layout</summary><p class="note">ChatGPT troubleshooting only. Read message structure and selected output text without sending a prompt or changing the connection.</p><button id="inspect-chat" class="secondary" type="button">Inspect chat layout</button><p id="diagnostic-status" role="status"></p><textarea id="diagnostic-report" aria-label="Chat layout report" readonly hidden></textarea><button id="copy-diagnostics" class="secondary" type="button" hidden>Copy diagnostics</button></details>
-  <footer class="companion-footer"><a href="http://127.0.0.1:4318/connected-browser.html" target="_blank" rel="noopener noreferrer">Setup guide</a><span>Local browser access</span></footer>
+  <details><summary>Inspect chat layout</summary><p class="note">For supported conversation layouts. Read message structure and selected output text without sending a prompt or changing the connection.</p><button id="inspect-chat" class="secondary" type="button">Inspect chat layout</button><p id="diagnostic-status" role="status"></p><textarea id="diagnostic-report" aria-label="Chat layout report" readonly hidden></textarea><button id="copy-diagnostics" class="secondary" type="button" hidden>Copy diagnostics</button></details>
+  <footer class="companion-footer"><a id="setup-guide" href="http://127.0.0.1:4317/connected-browser.html" target="_blank" rel="noopener noreferrer">Setup guide</a><span>Runs on your computer</span></footer>
 </main>
 <script type="module" src="popup.mjs"></script>
 </body>

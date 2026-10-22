@@ -50,8 +50,24 @@ export function installBrowserWorkspaces(app,{store,dataDir,connection,saveConne
     db.prepare('DELETE FROM browser_workspaces WHERE id=?').run(b.id);audit('browser.removed',b.id);return {ok:true};
     }finally{deleting.delete(b.id);}
   });
-  return {get,list,safe,create,bind(bid,context){
-    const b=get(bid);if(b.context_id&&b.context_id!==context)fail('WRONG_BROWSER','This app belongs to another saved Chrome browser. Open it there, or create a connection for this browser.',409);
+  return {get,list,safe,create,bind(bid,context,{connectionId,replace=false}={}){
+    let b=get(bid);
+    if(b.context_id&&b.context_id!==context){
+      if(!replace||!connectionId)fail('WRONG_BROWSER','The companion identity changed. Create a fresh Connect code in Hermo, then connect this tab. Your actions and API keys stay saved.',409);
+      const c=connection(connectionId);if(c.browser_workspace_id!==bid)fail('WRONG_BROWSER','The saved browser changed. Create a fresh Connect code.',409);
+      // Owner-authorized recovery moves only this app. A shared browser's other
+      // apps retain their original profile binding and live tab authorization.
+      const matching=list().find(value=>value.kind==='current'&&value.context_id===context);
+      const reuse=!matching&&b.kind==='current'&&safe(b).apps.length===1;
+      if(!matching&&!reuse&&list().length>=20)fail('BROWSER_LIMIT','Remove an unused saved browser before reconnecting this app.',409);
+      db.exec('BEGIN IMMEDIATE');try{
+        b=matching??(reuse?b:create('Reconnected Chrome browser','current'));
+        if(b.context_id!==context)db.prepare('UPDATE browser_workspaces SET payload=? WHERE id=?').run(seal({...b,context_id:context}),b.id);
+        if(c.browser_workspace_id!==b.id)saveConnection(c,{browser_workspace_id:b.id});
+        audit('browser.app_reconnected',c.id);db.exec('COMMIT');
+      }catch(error){db.exec('ROLLBACK');throw error;}
+      return;
+    }
     if(!b.context_id)db.prepare('UPDATE browser_workspaces SET payload=? WHERE id=?').run(seal({...b,context_id:context}),b.id);
   }};
 }

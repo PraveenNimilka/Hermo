@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 
 const rootDocuments=new Set(['README.md','CONTRIBUTING.md','SECURITY.md','THIRD-PARTY-NOTICES.md','CHANGELOG.md','CODE_OF_CONDUCT.md','SUPPORT.md','LICENSE.md']);
 const localDirectories=new Set(['.agents','.codex','.claude','.cursor','.windsurf','.continue','node_modules','dist','coverage','work','.hermo','validation','screenshots','test-results','playwright-report']);
+const maintainedReports=new Set(['docs/testing/verification-report.md']);
 
 export function repositoryIssues(files,readText=()=> ''){
   const issues=[];
@@ -14,7 +15,7 @@ export function repositoryIssues(files,readText=()=> ''){
       issues.push({path,reason:'Local configuration or generated output must remain untracked.'});
     }else if(parts.length===1&&/\.md$/i.test(path)&&!rootDocuments.has(path)){
       issues.push({path,reason:'Keep maintained guides in docs/ and temporary notes outside the tracked tree.'});
-    }else if(!path.startsWith('.github/')&&/(?:^|\/)[^/]+-(?:VALIDATION|BUGFIXES|REPORT|PLAN|RESEARCH|CHECK)\.(?:md|json)$/i.test(path)){
+    }else if(!maintainedReports.has(path)&&!path.startsWith('.github/')&&/(?:^|\/)[^/]+-(?:VALIDATION|BUGFIXES|REPORT|PLAN|RESEARCH|CHECK)\.(?:md|json)$/i.test(path)){
       issues.push({path,reason:'Keep generated reports and temporary development notes outside the tracked tree.'});
     }
     if((path==='README.md'||path.startsWith('docs/'))&&/\.md$/i.test(path)&&/https?:\/\/github\.com\/[^/\s]+\/(?:skills|[^/\s]+-skills?)(?=[/#?\s)"'>]|$)/i.test(readText(path))){

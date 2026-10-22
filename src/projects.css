@@ -1,0 +1,16 @@
+.project-management .projects-content{display:flex;flex-direction:column;gap:20px;min-width:0;padding-bottom:28px}
+.project-management .projects-content form{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.project-management .projects-content .field{width:100%;min-width:0;margin:0}
+.project-management .project-filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:10px}
+.project-management .project-list{display:flex;flex-direction:column;gap:8px;max-height:230px;overflow:auto;padding:2px}
+.project-management .project-list-item{display:flex;flex-direction:column;gap:5px;align-items:flex-start;text-align:left;border:1px solid var(--border,#e5e5e5);border-radius:10px;background:transparent;padding:12px;width:100%;min-width:0;color:inherit}
+.project-management .project-list-item[aria-pressed=true]{background:#f4f4f4;border-color:#aaa}
+.project-management .project-list-item strong,.project-management .project-list-item span,.project-management .project-list-item small{max-width:100%;overflow-wrap:anywhere;white-space:normal}
+.project-management .project-list-item span{font-size:13px;color:#555;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.project-management .project-list-item small,.project-management .project-health small{font-size:12px;line-height:1.5;color:#666}
+.project-management .project-health{padding:14px;border:1px solid var(--border,#e5e5e5);border-radius:10px;overflow-wrap:anywhere}
+.project-management .project-health p{font-size:13px;line-height:1.6;margin:8px 0}
+.project-management .projects-content hr{border:0;border-top:1px solid var(--border,#e5e5e5);width:100%;margin:0}
+.project-management .projects-content h3{margin:0;font-size:16px}
+@media(max-width:560px){.project-management .project-filters{grid-template-columns:1fr 1fr}.project-management .project-filters>.field:first-child{grid-column:1/-1}}
+.project-management .projects-content>*{flex-shrink:0}

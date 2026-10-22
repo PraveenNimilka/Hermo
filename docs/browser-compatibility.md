@@ -6,7 +6,7 @@ not establish that its sign-in, controls or output extraction will work.
 | Mode | Browser | Execution boundary |
 | --- | --- | --- |
 | Connected Chrome | An explicitly authorized existing tab | Recorded actions use the current website session and can change data. Commands are scoped to the authorized tab, origin and path. |
-| Isolated retrieval | A separate local Chromium context | Approved origins, public-network restrictions and GET/HEAD replay. It cannot submit forms or generate media. |
+| Managed local browser | A dedicated Chromium profile, encrypted between sessions | Exact approved origins and public-network restrictions. Retrieval revisions allow GET/HEAD; explicitly reviewed website-action revisions also allow HTTP submissions and WSS. |
 
 The dashboard can close while the runtime remains running. Both modes still
 need an available local browser. Connected-tab setup is documented in the
@@ -60,8 +60,8 @@ Optional Google setup is described in the [Google browser guide](google-browser.
 Domain approval does not allow private or reserved network destinations,
 metadata hosts, nondefault HTTPS ports or local management routes. Isolated
 service workers are disabled; applications that require them may fail. Approved
-encrypted sockets are available during isolated setup, while replay blocks
-sockets and external write requests.
+encrypted sockets are available during isolated setup and explicitly configured
+website-action replay. Retrieval revisions keep sockets and write requests blocked.
 
 Reopening the connection dialog resumes a still-active isolated session. Lock,
 browser closure or runtime restart ends that active session; explicitly saved

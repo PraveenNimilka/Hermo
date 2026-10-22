@@ -31,7 +31,8 @@ test('published revisions isolate drafts, pin queued runs, preserve key scopes a
     if(response.headers['set-cookie'])cookie=response.headers['set-cookie'].split(';')[0];
     return {status:response.statusCode,value:response.json()};
   };
-  const ok=async(...args)=>{const response=await call(...args);assert.ok(response.status<300,JSON.stringify(response));return response.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(...args)=>{if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/rollback$/.test(args[0])){const base=args[0].replace(/\/rollback$/,''),history=await ok(base+'/revisions'),review=await ok(base+'/revision-diff?from='+history.active_revision+'&to='+args[1].revision);args[1]={...(review.changes?{change_fingerprint:review.changes.fingerprint,accept_breaking:true,permissions_reviewed:true}:{}),...args[1]};}if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(args[0])){const review=await ok(args[0].replace(/\/publish$/,'/permissions'));args[1]={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...args[1]};}const response=await call(...args);assert.ok(response.status<300,JSON.stringify(response));return response.value;};
   const finish=rid=>until(async()=>{const run=await ok('/studio/runs/'+rid);return ['succeeded','failed','cancelled'].includes(run.status)?run:null;});
   const wid='wf_revision',base=`/studio/workflows/${wid}`,endpoint='/v1/actions/revision.fixture/versions/1/runs';
   try{

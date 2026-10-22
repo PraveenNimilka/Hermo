@@ -17,6 +17,11 @@ test('each independent application serves its own source and shared assets', asy
       assert.equal((await fetch(origin)).status, 200);
       assert.equal((await (await fetch(origin + '/config')).json()).app, app);
       assert.equal((await fetch(origin + '/app.mjs')).status, 200);
+      if (app === 'simple-ai-chat') {
+        assert.match(await (await fetch(origin)).text(), /<title>Hermo conversation tester<\/title>/);
+        for (const asset of ['/simple-ai-chat/style.css', '/simple-ai-chat/chat.mjs']) assert.equal((await fetch(origin + asset)).status, 200);
+        assert.equal((await fetch(origin + '/product-search/app.mjs')).status, 404);
+      }
       for (const asset of ['/shared/ui.mjs', '/shared/client.mjs', '/shared/data.mjs', '/shared/style.css']) assert.equal((await fetch(origin + asset)).status, 200);
       assert.equal((await fetch(origin + '/shared/host.mjs')).status, 404);
       assert.equal((await fetch(origin + '/server/index.mjs')).status, 404);

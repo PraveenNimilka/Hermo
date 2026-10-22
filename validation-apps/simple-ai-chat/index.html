@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A simple local chat app for testing published Hermo workflows and scoped API keys.">
+  <title>Hermo conversation tester</title>
+  <link rel="stylesheet" href="/simple-ai-chat/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#message">Skip to message</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Hermo connection">
+      <a class="brand" href="/" aria-label="Hermo conversation tester home"><span class="brand-mark" aria-hidden="true">h.</span><span>Hermo <small>API tester</small></span></a>
+      <div class="section-heading"><h2>Connection</h2><span id="connection-state" class="badge">Not connected</span></div>
+      <p class="muted">Paste a published workflow key to start testing.</p>
+      <form id="connection-form">
+        <fieldset id="connection-fields">
+          <label for="api-key">Scoped API key</label>
+          <div class="key-field"><input id="api-key" type="password" placeholder="hm_live_…" autocomplete="off" spellcheck="false" required aria-describedby="key-hint connection-error"><button id="show-key" type="button" aria-pressed="false">Show</button></div>
+          <p class="hint" id="key-hint">Stored in this tab’s memory. Reloading clears it.</p>
+          <label for="endpoint">Published endpoint <span class="optional">optional</span></label>
+          <input id="endpoint" type="text" placeholder="Auto-detect from your key" spellcheck="false" aria-describedby="endpoint-hint connection-error">
+          <p class="hint" id="endpoint-hint">Paste an endpoint or leave blank to detect it.</p>
+          <button class="primary full" id="connect" type="submit">Connect key</button>
+        </fieldset>
+      </form>
+      <p id="connection-error" class="error" role="alert"></p>
+      <section id="mapping" hidden aria-labelledby="mapping-title">
+        <h2 id="mapping-title">Workflow</h2>
+        <p id="workflow-name" class="workflow-name"></p>
+        <label for="prompt-field">Message input</label><select id="prompt-field" aria-describedby="prompt-hint"></select>
+        <p id="prompt-hint" class="hint">Your message goes into this workflow input.</p>
+        <label for="response-field">Reply output</label><select id="response-field"></select>
+        <details class="advanced"><summary>Additional inputs</summary><label for="extra-inputs">Input JSON</label><textarea id="extra-inputs" rows="5" spellcheck="false" aria-describedby="extra-hint chat-error">{}</textarea><p class="hint" id="extra-hint">Include any other required workflow inputs. The message replaces the selected message field.</p></details>
+        <details class="advanced"><summary>Published contract</summary><pre id="contract-json" tabindex="0" aria-label="Published workflow contract"></pre></details>
+      </section>
+      <div class="runtime-note"><span class="runtime-dot" aria-hidden="true"></span><div>Local runtime<code id="runtime">Loading…</code><p class="hint">Keep Hermo and its required browser session running.</p></div></div>
+    </aside>
+    <main>
+      <header class="chat-header"><div><h1>Hermo conversation tester</h1><p>One key. A message. A real workflow reply.</p></div><button id="clear" type="button">Clear chat</button></header>
+      <div class="chat-body" id="chat-body">
+        <section class="welcome" id="welcome"><div class="chat-symbol" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M25 7H7v15h5l4 5v-5h9V7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 12h10M11 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h2>Give your API a conversation.</h2><p>Connect a Hermo key, choose your message input, and send a prompt to your published workflow.</p><div class="welcome-note">Each message runs the workflow once.<br>Conversation history is displayed here and is not sent automatically.</div></section>
+        <div id="messages" role="log" aria-label="Chat messages" aria-live="polite" aria-relevant="additions"></div>
+      </div>
+      <div class="composer-area">
+        <p id="run-status" role="status">Connect your API key to get started.</p>
+        <p id="chat-error" class="error" role="alert"></p>
+        <div id="recovery" class="recovery" hidden><button id="resume" type="button">Resume checking</button><button id="cancel" type="button" hidden>Cancel run</button></div>
+        <form id="message-form" class="composer"><label class="sr-only" for="message">Message</label><textarea id="message" rows="2" placeholder="Write a message to test your workflow…" required disabled aria-describedby="composer-hint chat-error"></textarea><button class="primary send" id="send" type="submit" disabled>Send <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="m4 10 12-6-4 12-2-6-6-0ZM10 10l6-6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button></form>
+        <div class="composer-footer"><p class="hint" id="composer-hint">Enter to send · Shift + Enter for a new line</p><button id="stop" type="button" hidden>Stop waiting</button><span class="hint">Powered by your Hermo workflow</span></div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/app.mjs"></script>
+</body>
+</html>

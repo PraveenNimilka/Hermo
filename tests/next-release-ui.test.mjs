@@ -13,7 +13,8 @@ test('projects, revision history, editor and scoped-key playground work in deskt
   const {app,store,origin}=await createApp({port,dataDir});let browser;
   app.get('/sandbox/ui-catalog',async(req,reply)=>reply.type('text/html').send('<h1>Product catalog</h1><article class="product"><h2 class="title">Notebook</h2><span class="price">149.99</span></article><article class="product"><h2 class="title">Pen</h2><span class="price">2.50</span></article>'));
   let cookie='',csrf='';
-  const call=async(path,body)=>{const r=await app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:`127.0.0.1:${port}`,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf}},...body===undefined?{}:{payload:body}});if(r.headers['set-cookie'])cookie=r.headers['set-cookie'].split(';')[0];assert.ok(r.statusCode<300,r.body);return r.json();};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const call=async(path,body)=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await call(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}const r=await app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:`127.0.0.1:${port}`,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf}},...body===undefined?{}:{payload:body}});if(r.headers['set-cookie'])cookie=r.headers['set-cookie'].split(';')[0];assert.ok(r.statusCode<300,r.body);return r.json();};
   const finish=async rid=>{for(let n=0;n<200;n++){const value=await call('/studio/runs/'+rid);if(['succeeded','failed'].includes(value.status))return value;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Run never finished');};
   try{
     csrf=(await call('/studio/session')).csrf;csrf=(await call('/studio/setup',{password:'synthetic-ui-workspace-password'})).csrf;
@@ -55,7 +56,24 @@ test('projects, revision history, editor and scoped-key playground work in deskt
       const overflow=await page.evaluate(()=>({document:document.documentElement.scrollWidth>innerWidth+1,dialog:[...document.querySelectorAll('[role=dialog]')].some(e=>e.scrollWidth>e.clientWidth+1)}));assert.deepEqual(overflow,{document:false,dialog:false},'editor overflow '+width);
       await page.screenshot({path:join(dataDir,`editor-${width}.png`)});
     }
+    // A fast verification can finish before the dialog's first status response.
+    // Return that real terminal response directly rather than relying on a poll.
+    await page.route('**/studio/runs/*',async route=>{
+      const deadline=Date.now()+20000;
+      while(Date.now()<deadline){
+        const response=await route.fetch(),run=await response.json();
+        if(['succeeded','failed','cancelled'].includes(run.status)){await route.fulfill({response});return;}
+        await new Promise(done=>setTimeout(done,50));
+      }
+      assert.fail('Verification did not finish before its first UI observation');
+    },{times:1});
     await page.setViewportSize({width:1440,height:1000});await dialog.getByRole('button',{name:'Run verification',exact:true}).click();await dialog.getByRole('button',{name:'Publish draft revision',exact:true}).waitFor();
+    await dialog.getByRole('checkbox',{name:'I reviewed this workflow’s permissions and possible website effects.'}).check();
+    const publication=dialog.getByRole('button',{name:'Publish draft revision',exact:true});
+    assert.equal(await publication.isDisabled(),true,'changing the published price type still needs explicit breaking-contract consent');
+    await dialog.getByRole('checkbox',{name:'I reviewed the breaking API contract changes and will update affected clients.'}).check();
+    await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] button')].some(button=>button.textContent.trim()==='Publish draft revision'&&!button.disabled));
+    assert.equal(await publication.isEnabled(),true,'both independent publication reviews have been explicitly acknowledged');
     await dialog.getByRole('button',{name:'Publish draft revision',exact:true}).click();await page.getByRole('heading',{name:'Your action is ready.',exact:true}).waitFor();
     await page.getByRole('dialog').getByRole('button',{name:'Done',exact:true}).click();
     await page.getByRole('button',{name:'Version history',exact:true}).click();dialog=page.getByRole('dialog');await dialog.getByRole('button',{name:'Compare with live',exact:true}).click();await dialog.getByRole('region',{name:'Revision comparison'}).waitFor();await dialog.getByText('Changed: outputs').waitFor();await page.screenshot({path:join(dataDir,'revisions-desktop.png')});await dialog.getByRole('button',{name:'Done',exact:true}).click();

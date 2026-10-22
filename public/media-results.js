@@ -4,6 +4,7 @@ export function assetURL(value,baseOrigin){
   if(typeof value!=='string'||value.length>4096||/[\u0000-\u0020\u007f]/.test(value))return null;
   let url;try{url=new URL(value);}catch{return null;}
   if(url.username||url.password||!['http:','https:'].includes(url.protocol))return null;
+  if(url.protocol==='http:'&&url.hostname==='127.0.0.1'&&/^\/media\/assets\/[A-Za-z0-9_-]{43}$/.test(url.pathname)&&!url.search&&!url.hash)return url.href;
   // Only the public sandbox can be previewed from the local runtime itself.
   if(url.origin===baseOrigin)return url.pathname.startsWith('/sandbox/')?url.href:null;
   if(url.protocol!=='https:')return null;

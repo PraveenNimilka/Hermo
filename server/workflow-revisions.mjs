@@ -10,7 +10,7 @@ const revisionNumber=value=>Number.isSafeInteger(value)&&value>0?value:undefined
 // current encrypted session, but published entry pages and permissions stay put.
 export function snapshotConnection(connection){
   const config={id:connection.id,url:connection.url,origins:[...new Set(connection.origins)].sort(),access:connection.access??'account',browser_mode:connection.browser_mode??'isolated'};
-  for(const key of ['checkpoint','identity','browser_profile_id','browser_workspace_id'])if(connection[key]!==undefined)config[key]=clone(connection[key]);
+  for(const key of ['checkpoint','identity','browser_profile_id','browser_workspace_id','session_generation'])if(connection[key]!==undefined)config[key]=clone(connection[key]);
   return config;
 }
 
@@ -21,7 +21,7 @@ export function executionConnection(current,revision){
   // Additional origins approved later do not expand a published revision.
   // Removing a saved origin, changing account identity, or replacing its
   // browser binding requires a new tested publication instead of a fallback.
-  if(saved.origins.some(origin=>!live.origins.includes(origin))||['url','access','browser_mode','identity','browser_profile_id','browser_workspace_id'].some(key=>canonical(live[key])!==canonical(saved[key])))throw failure('REVISION_PERMISSION_CHANGED');
+  if(saved.origins.some(origin=>!live.origins.includes(origin))||['url','access','browser_mode','identity','browser_profile_id','browser_workspace_id','session_generation'].some(key=>canonical(live[key])!==canonical(saved[key])))throw failure('REVISION_PERMISSION_CHANGED');
   return {...current,...clone(saved),checkpoint:saved.checkpoint??saved.url};
 }
 

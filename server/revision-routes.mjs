@@ -1,5 +1,8 @@
 import {z} from 'zod';
 import {inputJsonSchema,outputJsonSchema} from './workflow-contract.mjs';
+import {compareWorkflowChanges} from './workflow-changes.mjs';
+import {effectiveApprovalSteps} from './approval-policy.mjs';
+import {publicWorkflowPermissions} from './workflow-permissions.mjs';
 
 // All routes inherit owner session, CSRF, Host and Origin checks from /studio.
 export function installRevisionRoutes(app,{store,revisions,snapshots,workflow,connection,safeWorkflow,assertConnectionIdle,isRecording,fail}){
@@ -28,9 +31,11 @@ export function installRevisionRoutes(app,{store,revisions,snapshots,workflow,co
     return {workflow:current(w.id)};
   });
   app.post('/studio/workflows/:wid/rollback',async req=>{
-    const w=workflow(req.params.wid),body=read(z.object({revision:revisionNumber,expected_active_revision:revisionNumber}).strict(),req.body),active=ensure(w);
+    const w=workflow(req.params.wid),body=read(z.object({revision:revisionNumber,expected_active_revision:revisionNumber,change_fingerprint:z.string().optional(),accept_breaking:z.boolean().optional(),permissions_reviewed:z.boolean().optional()}).strict(),req.body),active=ensure(w);
     if(active?.revision!==body.expected_active_revision)fail('VERSION_CHANGED','The live revision changed. Refresh version history before rolling back.',409);
-    if(!revisions.get(w,body.revision))fail('REVISION_NOT_FOUND','The selected revision was not found.',404);
+    const target=revisions.get(w,body.revision);if(!target)fail('REVISION_NOT_FOUND','The selected revision was not found.',404);
+    const changes=compareWorkflowChanges({before:active.definition,after:target.definition,beforeConnection:active.connection_config,afterConnection:target.connection_config});
+    if((changes.breaking||changes.permission_review_required)&&(body.change_fingerprint!==changes.fingerprint||changes.breaking&&body.accept_breaking!==true||changes.permission_review_required&&body.permissions_reviewed!==true))fail('ROLLBACK_REVIEW_REQUIRED','Review this exact revision’s contract and website permissions before changing the live API. Supply its change fingerprint and acknowledge the affected contract and permissions.',409);
     try{transact(()=>{revisions.rollback(w,body.revision);db.prepare("UPDATE workflows SET status='published' WHERE id=?").run(w.id);audit('action.rolled_back',w.id);});}
     catch(error){if(['TEST_REQUIRED','REVISION_PERMISSION_CHANGED'].includes(error.code))fail(error.code,error.code==='TEST_REQUIRED'?'Restore this historical revision into a draft and verify it before publishing.':'This revision’s browser or website permissions changed. Restore and retest it before publishing.',409);throw error;}
     return {workflow:current(w.id)};
@@ -40,8 +45,8 @@ export function installRevisionRoutes(app,{store,revisions,snapshots,workflow,co
     const body=read(z.object({from:z.coerce.number().int().positive(),to:z.coerce.number().int().positive()}).strict(),req.query);
     const left=revisions.get(w,body.from),right=revisions.get(w,body.to);
     if(!left||!right)fail('REVISION_NOT_FOUND','Both published revisions must exist.',404);
-    const describe=revision=>({revision:revision.revision,version:revision.version,execution_mode:revision.execution_mode,input_schema:inputJsonSchema(revision.definition.inputs),output_schema:outputJsonSchema(revision.definition.outputs),steps:revision.definition.steps.map(step=>({operation:step.op,enabled:step.enabled!==false,input:step.parameter??step.path_parameter??null})),timeout_ms:revision.definition.timeout_ms??45000});
+    const describe=revision=>({revision:revision.revision,version:revision.version,execution_mode:revision.execution_mode,input_schema:inputJsonSchema(revision.definition.inputs),output_schema:outputJsonSchema(revision.definition.outputs),permissions:publicWorkflowPermissions({...w,version:revision.version,definition:revision.definition,revision:revision.revision},revision.connection_config),steps:revision.definition.steps.map((step,index)=>({operation:step.op,enabled:step.enabled!==false,approval_required:effectiveApprovalSteps(revision.definition).includes(index+1),input:step.parameter??step.path_parameter??null})),timeout_ms:revision.definition.timeout_ms??45000});
     const before=describe(left),after=describe(right);
-    return {before,after,changed:['inputs','outputs','steps','verifiers','timeout_ms','effect'].filter(key=>JSON.stringify(left.definition[key])!==JSON.stringify(right.definition[key])),execution_changed:JSON.stringify(left.connection_config)!==JSON.stringify(right.connection_config)};
+    return {before,after,changes:compareWorkflowChanges({before:left.definition,after:right.definition,beforeConnection:left.connection_config,afterConnection:right.connection_config}),changed:['inputs','outputs','steps','verifiers','timeout_ms','effect','approval_policy'].filter(key=>JSON.stringify(left.definition[key])!==JSON.stringify(right.definition[key])),execution_changed:JSON.stringify(left.connection_config)!==JSON.stringify(right.connection_config)};
   });
 }

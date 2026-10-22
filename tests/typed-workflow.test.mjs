@@ -16,7 +16,8 @@ test('recorded scalar contract is edited, verified, published and shared by REST
   });
   await app.listen({port,host:'127.0.0.1'});let cookie='',csrf='',browser;
   const call=async(path,body,headers={})=>{const response=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{cookie,...body===undefined?{}:{'content-type':'application/json','x-hermo-csrf':csrf},...headers},...body===undefined?{}:{body:JSON.stringify(body)}});const set=response.headers.get('set-cookie');if(set?.startsWith('hermo_owner_'))cookie=set.split(';')[0];return {status:response.status,value:await response.json()};};
-  const ok=async(...args)=>{const response=await call(...args);assert.ok(response.status<300,JSON.stringify(response));return response.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(...args)=>{if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(args[0])){const review=await ok(args[0].replace(/\/publish$/,'/permissions'));args[1]={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...args[1]};}const response=await call(...args);assert.ok(response.status<300,JSON.stringify(response));return response.value;};
   const finish=async id=>{for(let n=0;n<200;n++){const run=await ok('/studio/runs/'+id);if(['succeeded','failed','cancelled'].includes(run.status))return run;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Run did not finish');};
   try{
     csrf=(await ok('/studio/session')).csrf;csrf=(await ok('/studio/setup',{password:'synthetic-scalar-contract-password'})).csrf;

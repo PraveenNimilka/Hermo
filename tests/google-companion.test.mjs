@@ -6,7 +6,7 @@ import {readFile} from 'node:fs/promises';
 import {createApp} from '../server/index.mjs';
 import {validateGoogleCookies,isCompanionRequest} from '../server/google-companion.mjs';
 import {normalChromeArguments} from '../server/normal-chrome.mjs';
-import {transferGoogleSession,normalizeCookies,localWorkspace,googleOrigins} from '../companion/chrome/transfer.mjs';
+import {transferGoogleSession,normalizeCookies,localWorkspace,googleOrigins} from '../integrations/google-session-extension/transfer.mjs';
 
 const extensionId='abcdefghijklmnopabcdefghijklmnop',extensionOrigin='chrome-extension://'+extensionId;
 const syntheticCookie={name:'__Secure-1PSID',value:'synthetic-local-google-cookie',domain:'.google.com',path:'/',expires:-1,httpOnly:true,secure:true,sameSite:'None'};
@@ -28,7 +28,7 @@ test('companion strictly limits cookie scope and local transport',async()=>{
   assert.equal(normalizeCookies([[{...chromeCookie,partitionKey:{topLevelSite:'https://attacker.test'}}]]).length,0);
   assert.equal(isCompanionRequest({method:'POST',headers:{origin:'https://attacker.test','x-hermo-extension-id':extensionId}},'/companion/google/import'),false);
   assert.equal(isCompanionRequest({method:'POST',headers:{origin:extensionOrigin,'x-hermo-extension-id':extensionId}},'/studio/overview'),false);
-  const manifest=JSON.parse(await readFile(new URL('../companion/chrome/manifest.json',import.meta.url)));
+  const manifest=JSON.parse(await readFile(new URL('../integrations/google-session-extension/manifest.json',import.meta.url)));
   assert.equal(manifest.background,undefined);assert.equal(manifest.content_scripts,undefined);assert.deepEqual(manifest.optional_permissions,['cookies']);assert.equal(manifest.optional_host_permissions.some(x=>x.includes('*://')||x.includes('*.')),false);
   assert.deepEqual(manifest.optional_host_permissions,googleOrigins.map(origin=>origin+'/*'));
   assert.ok(manifest.optional_host_permissions.includes('https://google.com/*'));
@@ -49,6 +49,7 @@ test('one-use normal Chrome import is password/owner bound, encrypted, scoped an
     assert.equal((await owner('/studio/browser-profiles/normal-chrome',{name:'Synthetic',authorized:true,password:'wrong'})).statusCode,401);assert.equal(launched,0);
     const a=await start();assert.equal(a.statusCode,200,a.body);const code=a.json().code;assert.match(code,/^hi_import_[A-Za-z0-9_-]{43}$/);assert.equal(launched,1);
     assert.equal(a.json().workspace_origin,'http://127.0.0.1:4346');
+    assert.equal(a.json().extension_directory,resolve('integrations/google-session-extension'));
     const preflight=await app.inject({method:'OPTIONS',url:'/companion/google/import',headers:{host:'127.0.0.1:4346',origin:extensionOrigin,'sec-fetch-site':'cross-site'}});assert.equal(preflight.statusCode,204);assert.equal(preflight.headers['access-control-allow-origin'],extensionOrigin);
     assert.equal((await importCall(code,undefined,{origin:'https://attacker.test'})).statusCode,403);
     assert.equal((await importCall(code,undefined,{host:'attacker.test'})).statusCode,403);

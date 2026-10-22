@@ -20,6 +20,13 @@ boundaries. Encryption does not protect against a compromised OS account.
 Workflow defaults and results can contain private information; automatic
 sensitive-field detection and redaction are incomplete.
 
+Selected page-local generated images can also be captured as encrypted run
+assets (PNG, JPEG, WebP or GIF; up to 8 MiB each). Their read-only capability
+links expire after one hour. Anyone holding a link can read that single image
+until expiry; do not publish private links. Expired assets are removed on the
+next capture or with their run’s deletion. Backups can retain older assets.
+Live-preview frames remain separate from these explicitly selected outputs.
+
 ## External communication
 
 Workflow actions communicate with the websites you authorize. Those sites

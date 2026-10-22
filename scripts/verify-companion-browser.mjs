@@ -7,7 +7,7 @@ import {chromium} from 'playwright';
 
 test('real Chromium cookie API hides parent-domain sign-in with old permissions and exposes it with the fix',{timeout:60000},async()=>{
   const root=resolve('work/companion-chromium-tests',randomBytes(6).toString('hex'));
-  const source=resolve('companion/chrome'),paths=[];
+  const source=resolve('integrations/google-session-extension'),paths=[];
   const manifest=JSON.parse(await readFile(join(source,'manifest.json'),'utf8'));
   // These are test-only extensions in a new synthetic profile. Static cookie
   // grants isolate Chrome's domain permission check without a user account or

@@ -34,6 +34,15 @@ test('poll timeout remains uncertain and does not automatically readmit a workfl
   const client = makeClient({ key, endpoint, timeoutMs: 4, pollMs: 2, transport: async request => request.method === 'POST' ? (admissions++, { run_id: 'run_pending' }) : { id: 'run_pending', status: 'running' } });
   await assert.rejects(client.run({}), error => error.code === 'CLIENT_WAIT_TIMEOUT'); assert.equal(admissions, 1);
 });
+
+test('terminal failed runs retain their run identity and error instead of becoming uncertain transport failures', async () => {
+  for (const status of ['failed', 'timed_out', 'cancelled', 'disconnected']) {
+    const run = { id: 'run_failed', status, error: { code: 'WORKFLOW_FAILED', message: 'The workflow stopped.' } };
+    const client = makeClient({ key, endpoint, transport: async () => run });
+    assert.equal(await client.wait(run.id), run);
+    assert.equal(await client.cancel(run.id), run);
+  }
+});
 test('MCP consumer discovers schemas, invokes actual protocol and polls get_run through MCP', async () => {
   const requests = [];
   const transport = async request => {

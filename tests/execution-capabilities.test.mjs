@@ -36,12 +36,15 @@ test('configuration validation rejects arbitrary authority and private destinati
   assert.equal(report({steps:[{op:'click',selector:'button'}]},connection,restricted).errors[0].code,'UNSUPPORTED_STEP');
 });
 
-test('managed retrieval capabilities report actual restrictions, never managed mutation support',()=>{
+test('managed retrieval stays restricted while explicitly selected website actions are compatible',()=>{
   for(const op of ['navigate','click','fill','select','check']){
     const steps=[op==='navigate'?{op,url:connection.url}:{op,selector:'#control'}];
     assert.equal(report({steps}).compatible,true,op);
   }
-  for(const patch of [{action_type:'generate_media'},{action_type:'submit_form'},{effect:'recorded_browser_actions'},{execution:{network_policy:'authorized_actions'}}])assert.ok(report(patch).errors.some(error=>error.code==='MANAGED_ACTIONS_NOT_SUPPORTED'));
+  for(const action_type of ['generate_media','submit_form'])assert.ok(report({action_type}).errors.some(error=>error.code==='MANAGED_ACTION_PERMISSION_REQUIRED'));
+  assert.equal(report({effect:'recorded_browser_actions'}).compatible,true);
+  assert.equal(report({action_type:'submit_form',effect:'recorded_browser_actions'}).compatible,true);
+  assert.ok(!report({effect:'recorded_browser_actions'}).warnings.some(value=>value.code==='RETRIEVAL_NETWORK_ONLY'));
   for(const op of ['evaluate','wait','extract_collection','upload','scroll'])assert.equal(report({steps:[{op}]}).errors[0].code,'UNSUPPORTED_STEP');
   assert.ok(report({steps:[{op:'click',selector:'button'}]}).warnings.some(value=>value.code==='RETRIEVAL_NETWORK_ONLY'));
   assert.ok(report({}, {...connection,access:'account'}).warnings.some(value=>value.code==='AUTHENTICATION_SETUP_REQUIRED'));

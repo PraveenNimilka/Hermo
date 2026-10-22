@@ -52,7 +52,7 @@ retrieval, separately run `npx.cmd playwright install chromium`.
 Windows PowerShell:
 
 ```powershell
-git clone https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.2 https://github.com/PraveenNimilka/Hermo.git
 cd Hermo
 npm.cmd ci
 npx.cmd playwright install chromium
@@ -63,7 +63,7 @@ npm.cmd start
 macOS or Linux:
 
 ```sh
-git clone https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.2 https://github.com/PraveenNimilka/Hermo.git
 cd Hermo
 npm ci
 npx playwright install chromium
@@ -111,13 +111,26 @@ Hermo does **not** automatically load `.env` files.
 5. Paste the code, check the companion's **I authorize reading this tab and
    replaying my workflows** checkbox, and choose **Connect selected tab**.
 
-The runtime defaults to **4317**, while the companion's saved initial address is
-**4318**. Set them to the same address. For a default installation, enter
-`http://127.0.0.1:4317` in the companion. The code is temporary, one-use authority;
+If the companion was reinstalled, moved or opened in a different Chrome profile,
+open that app's connection setup in Hermo and create a fresh Connect code.
+Entering it in the intended browser rebinds **that app** by default. Its actions
+and API keys stay saved; other apps keep their existing browser connections.
+No second reconnect checkbox is required. Finish active work before reconnecting.
+Reloading the same extension in place normally preserves its identity.
+
+The advanced **Reconnect after reinstalling the companion** control resets an
+entire saved browser binding. Use it only when you intend to stop and reconnect
+all websites attached to that saved browser, after reviewing its acknowledgment.
+
+The runtime and a newly installed companion both default to **4317**. If you use
+a custom port, set the companion to the same address. Existing saved addresses
+are retained. The code is temporary, one-use authority;
 it is not an API key. Normal-tab connections need no account-name confirmation.
 
-Use `companion/browser`, not the separate legacy Google-cookie import extension
-under `companion/chrome`. See the [companion guide](../companion/browser/README.md).
+Use `companion/browser` for connected-tab workflows. The optional Google-cookie
+import extension lives separately under `integrations/google-session-extension`.
+See the [companion guide](../companion/browser/README.md) or the
+[Google import guide](../integrations/google-session-extension/README.md).
 
 ## Change the port or data location
 
@@ -165,4 +178,5 @@ substitute a new encryption key to troubleshoot an upgrade. A DPAPI backup is
 bound to its Windows user context; copying it to another account is not a
 portable recovery method. There is no verified automatic downgrade procedure.
 
-Continue with the [user guide](user-guide.md).
+Continue with the [end-to-end walkthrough](getting-started.md), then consult the
+[user guide](user-guide.md) for the complete workflow reference.

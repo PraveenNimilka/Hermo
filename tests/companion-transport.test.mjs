@@ -2,23 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {resolve} from 'node:path';
+import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {createApp} from '../server/index.mjs';
+import {hash} from '../server/store.mjs';
 
 test('default companion survives forced worker restart and stops delayed actions safely',{timeout:180000},async t=>{
   process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');const port=4396;
-  const {app,origin}=await createApp({port,dataDir:resolve('work/transport-tests',randomBytes(6).toString('hex'))});
-  app.get('/sandbox/weather',async(_,reply)=>reply.type('text/html').send('<!doctype html><title>Transport weather</title><main><h1>Colombo weather</h1><output id="temperature">28 C</output></main>'));
+  const {app,origin,store}=await createApp({port,dataDir:resolve('work/transport-tests',randomBytes(6).toString('hex'))});
+  app.get('/sandbox/weather',async(_,reply)=>reply.type('text/html').send('<!doctype html><title>Transport weather</title><main><h1>Colombo weather</h1><output id="temperature">28 C</output><button id="preview-click">Preview action</button><output id="preview-count">0</output></main><script src="/sandbox/preview-action.js"></script>'));
+  app.get('/sandbox/preview-action.js',async(_,reply)=>reply.type('text/javascript').send("document.querySelector('#preview-click').onclick=()=>{document.querySelector('#preview-count').textContent=String(Number(document.querySelector('#preview-count').textContent)+1);};"));
   let dropNextPoll=false;
   app.addHook('onRequest',async(req,reply)=>{if(dropNextPoll&&req.url==='/companion/browser/poll'){dropNextPoll=false;reply.hijack();reply.raw.destroy();}});
   await app.listen({port,host:'127.0.0.1'});let context,cookie='',csrf='';
-  const ok=async(path,body)=>{const r=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{...cookie?{cookie}:{},...body===undefined?{}:{'content-type':'application/json','x-hermo-csrf':csrf}},body:body===undefined?undefined:JSON.stringify(body)});const set=r.headers.get('set-cookie');if(set?.startsWith('hermo_owner_'))cookie=set.split(';')[0];const value=await r.json();assert.ok(r.ok,JSON.stringify(value));return value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(path,body)=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await ok(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}const r=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{...cookie?{cookie}:{},...body===undefined?{}:{'content-type':'application/json','x-hermo-csrf':csrf}},body:body===undefined?undefined:JSON.stringify(body)});const set=r.headers.get('set-cookie');if(set?.startsWith('hermo_owner_'))cookie=set.split(';')[0];const value=await r.json();assert.ok(r.ok,JSON.stringify(value));return value;};
   try{
     csrf=(await ok('/studio/session')).csrf;csrf=(await ok('/studio/setup',{password:'synthetic-transport-password'})).csrf;
     const connection=(await ok('/studio/connections',{name:'Weather transport',url:origin+'/sandbox/weather',access:'public',browser_mode:'connected',authorized:true})).connection;
-    context=await chromium.launchPersistentContext('',{headless:true,chromiumSandbox:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--enable-unsafe-extension-debugging'],ignoreDefaultArgs:['--disable-extensions']});
+    context=await chromium.launchPersistentContext('',{headless:true,viewport:null,chromiumSandbox:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--enable-unsafe-extension-debugging','--window-size=1280,900'],ignoreDefaultArgs:['--disable-extensions']});
     const cdp=await context.browser().newBrowserCDPSession(),{id:extensionId}=await cdp.send('Extensions.loadUnpacked',{path:resolve('companion/browser')});
-    const evaluate=async(targetId,expression)=>{const {sessionId}=await cdp.send('Target.attachToTarget',{targetId,flatten:false});try{return await new Promise((resolve,reject)=>{const listener=e=>{if(e.sessionId!==sessionId)return;const data=JSON.parse(e.message);if(data.id!==73)return;clearTimeout(timer);cdp.off('Target.receivedMessageFromTarget',listener);if(data.error||data.result?.exceptionDetails)reject(Error(JSON.stringify(data)));else resolve(data.result.result.value);};const timer=setTimeout(()=>{cdp.off('Target.receivedMessageFromTarget',listener);reject(Error('Extension evaluation timeout'));},15000);cdp.on('Target.receivedMessageFromTarget',listener);cdp.send('Target.sendMessageToTarget',{sessionId,message:JSON.stringify({id:73,method:'Runtime.evaluate',params:{expression,awaitPromise:true,returnByValue:true}})}).catch(reject);});}finally{await cdp.send('Target.detachFromTarget',{sessionId}).catch(()=>{});}};
+    const targetCommand=async(targetId,method,params)=>{const {sessionId}=await cdp.send('Target.attachToTarget',{targetId,flatten:false});try{return await new Promise((resolve,reject)=>{const listener=e=>{if(e.sessionId!==sessionId)return;const data=JSON.parse(e.message);if(data.id!==73)return;clearTimeout(timer);cdp.off('Target.receivedMessageFromTarget',listener);if(data.error||data.result?.exceptionDetails)reject(Error(JSON.stringify(data)));else resolve(data.result);};const timer=setTimeout(()=>{cdp.off('Target.receivedMessageFromTarget',listener);reject(Error('Extension command timeout'));},15000);cdp.on('Target.receivedMessageFromTarget',listener);cdp.send('Target.sendMessageToTarget',{sessionId,message:JSON.stringify({id:73,method,params})}).catch(reject);});}finally{await cdp.send('Target.detachFromTarget',{sessionId}).catch(()=>{});}};
+    const evaluate=async(targetId,expression)=>(await targetCommand(targetId,'Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true})).result.value;
     const readyPopup=async()=>{
       for(let n=0;n<100;n++){
         const popup=(await cdp.send('Target.getTargets')).targetInfos.find(target=>target.url.endsWith('/popup.html'));
@@ -40,11 +45,47 @@ test('default companion survives forced worker restart and stops delayed actions
       const paired=(await link()).linked;
       assert.equal(paired,true,paired?undefined:await evaluate(popup.targetId,"document.querySelector('#status').textContent"));
       const targets=(await cdp.send('Target.getTargets')).targetInfos;assert.equal(targets.some(t=>t.url.includes('/controller.html')||t.url.includes('/connect.html')),false);
-      await cdp.send('Target.closeTarget',{targetId:popup.targetId});await site.locator('#hermo-connection-panel').waitFor();
+      await cdp.send('Target.closeTarget',{targetId:popup.targetId}).catch(error=>{if(!error.message.includes('No target with given id found'))throw error;});await site.locator('#hermo-connection-panel').waitFor();
     };
     const snapshot=()=>ok(`/studio/connections/${connection.id}/browser`);
     await pair();await ok(`/studio/connections/${connection.id}/confirm`,{public_source:true});
     assert.ok((await snapshot()).elements.some(e=>e.preview==='28 C'));
+    await t.test('connected popup preserves its connection and leaves preview off while reviewing reconnect options',async()=>{
+      assert.equal((await snapshot()).preview?.state,'disabled');
+      await site.bringToFront();const tab=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(target=>target.url===site.url());assert.ok(tab);
+      await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:tab.targetId});const popup=await readyPopup();
+      try{
+      for(let n=0;n<50;n++){if(await evaluate(popup.targetId,"document.body.dataset.connection==='connected'"))break;await new Promise(done=>setTimeout(done,100));}
+      const view=()=>evaluate(popup.targetId,"({connection:document.body.dataset.connection,pairHidden:document.querySelector('#pair').hidden,connectedHidden:document.querySelector('#connected-state').hidden,name:document.querySelector('#connection-name').textContent,stopHidden:document.querySelector('#preview-stop').hidden,openVisible:document.querySelector('#open-workspace').getClientRects().length>0,keepHidden:document.querySelector('#cancel-reconnect').hidden,authorized:document.querySelector('#authorize').checked,code:document.querySelector('#code').value,preview:document.querySelector('#live-preview').dataset.preview})");
+      assert.deepEqual(await view(),{connection:'connected',pairHidden:true,connectedHidden:false,name:'Weather transport',stopHidden:true,openVisible:true,keepHidden:true,authorized:false,code:'',preview:'disabled'});
+      assert.equal((await cdp.send('Target.getTargets')).targetInfos.some(target=>target.url.endsWith('/preview-offscreen.html')),false,'no preview document exists before explicit opt-in');
+      await evaluate(popup.targetId,"document.querySelector('#reconnect-tab').click();true");
+      const reconnect=await view();assert.equal(reconnect.pairHidden,false);assert.equal(reconnect.connectedHidden,true);assert.equal(reconnect.keepHidden,false);assert.equal(reconnect.authorized,false);assert.equal(reconnect.code,'');
+      assert.equal((await link()).linked,true,'reviewing reconnect options does not revoke the current session');
+      await evaluate(popup.targetId,"document.querySelector('#cancel-reconnect').click();true");
+      const kept=await view();assert.equal(kept.connection,'connected');assert.equal(kept.pairHidden,true);assert.equal(kept.connectedHidden,false);assert.equal(kept.keepHidden,true);assert.equal(kept.name,'Weather transport');assert.equal(kept.stopHidden,true);assert.equal(kept.preview,'disabled');
+      assert.equal((await link()).linked,true);
+      await evaluate(popup.targetId,'document.activeElement.blur();true');
+      await mkdir(resolve('work/companion-redesign'),{recursive:true});const screenshot=await targetCommand(popup.targetId,'Page.captureScreenshot',{format:'png'});
+      await writeFile(resolve('work/companion-redesign/connected-popup.png'),Buffer.from(screenshot.data,'base64'));
+      }catch(error){t.diagnostic('Connected popup check failed: '+error.message);throw error;}finally{await cdp.send('Target.closeTarget',{targetId:popup.targetId}).catch(()=>{});}
+      const after=await snapshot();assert.equal(after.preview?.state,'disabled','opening and reviewing the popup does not capture the tab');assert.ok(after.elements.some(element=>element.preview==='28 C'),'keeping the connection preserves actual browser commands');
+    });
+    await t.test('actual tabCapture frames support guarded preview clicks through the extension',async()=>{
+      await site.bringToFront();const tab=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(t=>t.url===site.url());
+      await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:tab.targetId});const popup=await readyPopup();
+      await evaluate(popup.targetId,"document.querySelector('#preview-enable').click();true");
+      let frame;for(let n=0;n<80;n++){frame=await snapshot();if(frame.preview?.state==='live'&&frame.preview.interaction_id)break;await new Promise(done=>setTimeout(done,100));}
+      if(!frame.preview?.interaction_id)console.log('Preview dimensions: '+JSON.stringify({preview:frame.preview,viewport:await site.evaluate(()=>({width:innerWidth,height:innerHeight}))}));
+      assert.equal(frame.preview?.state,'live','Chrome must deliver a live frame after explicit capture');assert.ok(frame.preview.interaction_id,'real captured frame can be interacted with');
+      const point=await site.locator('#preview-click').evaluate(node=>{const b=node.getBoundingClientRect();return {x:(b.x+b.width/2)/innerWidth,y:(b.y+b.height/2)/innerHeight};});
+      const picked=await ok(`/studio/connections/${connection.id}/preview-target`,{frame_id:frame.preview.interaction_id,...point});
+      await ok(`/studio/connections/${connection.id}/control`,{element_id:picked.element_id,kind:'click',preview_guard:picked.guard});assert.equal(await site.locator('#preview-count').textContent(),'1');
+      await site.bringToFront();await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:tab.targetId});const stopPopup=await readyPopup();
+      await evaluate(stopPopup.targetId,"(async()=>{const tab=(await chrome.tabs.query({active:true,currentWindow:true}))[0];return chrome.runtime.sendMessage({type:'hermo.preview.stop',tabId:tab.id});})()");
+      for(let n=0;n<30;n++){if((await snapshot()).preview?.state==='disabled')break;await new Promise(done=>setTimeout(done,100));}
+      await cdp.send('Target.closeTarget',{targetId:stopPopup.targetId}).catch(()=>{});
+    });
     await t.test('closing the dashboard preserves scoped published REST execution',async()=>{
       const recording=await ok('/studio/recordings',{connection_id:connection.id,name:'Weather without dashboard',slug:'weather.dashboard.closed',action_type:'read'});
       const temperature=(await snapshot()).elements.find(element=>element.preview==='28 C');assert.ok(temperature);
@@ -91,6 +132,30 @@ test('default companion survives forced worker restart and stops delayed actions
     const worker=(await cdp.send('Target.getTargets')).targetInfos.find(t=>t.type==='service_worker'&&t.url.endsWith('/background.mjs'));assert.ok(worker);
     await site.evaluate(()=>{const button=document.createElement('button');button.id='delayed-submit';button.textContent='Submit delayed task';window.hermoSyntheticSubmissions=0;button.addEventListener('click',()=>window.hermoSyntheticSubmissions++);document.querySelector('main').append(button);});
     const control=(await snapshot()).elements.find(e=>e.label==='Submit delayed task');assert.ok(control);
+    await t.test('revoking one active workflow key drains its command and keeps the companion available to another workflow',async()=>{
+      const keys={},at=new Date().toISOString();
+      for(const name of ['revoked','sibling']){
+        const definition={version:name,effect:name==='revoked'?'recorded_browser_actions':'retrieval',timeout_ms:15000,inputs:{},steps:name==='revoked'?[{op:'click',selector:'#delayed-submit'}]:[],outputs:[{name:'temperature',selector:'#temperature'}],verifiers:[{kind:'nonempty',output:'temperature'}]};
+        store.db.prepare('INSERT INTO workflows VALUES (?,?,?,?,?,?,?,?,?)').run('transport_'+name,connection.id,name,'transport.'+name,'published',name,store.seal(definition),name,at);
+        const secret='hm_live_'+randomBytes(32).toString('base64url');keys[name]=secret;
+        store.db.prepare('INSERT INTO api_keys VALUES (?,?,?,?,?,?,?,?)').run('transport_key_'+name,name,hash(secret),secret.slice(-6),'transport_'+name,'2099-01-01T00:00:00.000Z',null,at);
+      }
+      const start=async name=>{const response=await fetch(origin+'/v1/actions/transport.'+name+'/versions/1/runs',{method:'POST',headers:{authorization:'Bearer '+keys[name],'content-type':'application/json','idempotency-key':name},body:JSON.stringify({input:{}})});assert.equal(response.status,202);return response.json();};
+      await site.locator('#delayed-submit').evaluate(button=>{button.disabled=true;});
+      const revoked=await start('revoked');let issuing=false;
+      for(let n=0;n<80;n++){const run=await ok('/studio/runs/'+revoked.run_id);if(run.steps?.[0]?.status==='running'&&run.submission_may_have_occurred){issuing=true;break;}await new Promise(done=>setTimeout(done,50));}
+      assert.equal(issuing,true,'the real extension is waiting for the disabled workflow control');
+      await new Promise(done=>setTimeout(done,250));
+      await ok('/studio/keys/transport_key_revoked/revoke',{});
+      const sibling=await start('sibling');
+      await site.locator('#delayed-submit').evaluate(button=>{button.disabled=false;});
+      let completed;
+      for(let n=0;n<100;n++){completed=await ok('/studio/runs/'+sibling.run_id);if(!['queued','running','verifying'].includes(completed.status))break;await new Promise(done=>setTimeout(done,100));}
+      assert.equal(completed.status,'succeeded',JSON.stringify(completed));assert.deepEqual(completed.result,{temperature:'28 C'});
+      assert.equal((await link()).linked,true);assert.equal(await site.evaluate(()=>window.hermoSyntheticSubmissions),0,'revoked command never reaches the website click');
+      assert.equal((await ok('/studio/runs/'+revoked.run_id)).result,undefined);
+      assert.ok((await snapshot()).elements.some(element=>element.preview==='28 C'));
+    });
     await site.locator('#delayed-submit').evaluate(button=>{button.disabled=true;});
     const operation=fetch(origin+`/studio/connections/${connection.id}/control`,{method:'POST',headers:{cookie,'content-type':'application/json','x-hermo-csrf':csrf},body:JSON.stringify({element_id:control.id,kind:'click'})}).then(async response=>({status:response.status,body:await response.json()}));
     let waiting;

@@ -20,8 +20,7 @@ runtime's [Google setup guide](../public/google-setup.html) if you need it.
 
 ## Ports and local clients
 
-The companion initially saves `http://127.0.0.1:4318`, while the runtime defaults
-to port 4317. Set **Local runtime address** in the companion to your actual
+The companion and runtime both default to `http://127.0.0.1:4317`. Set **Local runtime address** in the companion to your actual
 runtime address. Generated documentation uses that running address. Independent
 consumer apps accept `--runtime` and must use the same value.
 

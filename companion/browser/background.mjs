@@ -2,14 +2,16 @@ import {renderPanel} from './panel.mjs';
 import {inspectDocument} from './inspect.mjs';
 import {executeBrowserCommand} from './commands.mjs';
 import {createLivePreview} from './live-preview.mjs';
+import {createBrowserIdentity} from './browser-identity.mjs';
 
 // Session storage survives MV3 suspension, never a Chrome restart. Only trusted
 // extension contexts can access these scoped grants; no website credentials.
 const sessions=new Map(),pairing=new Set(),storageKey='hermoScopedBrowserSessions',alarmName='hermo.connection.recover';let generation=Date.now(),storageQueue=Promise.resolve();
 const livePreview=createLivePreview({chrome});
+const browserIdentity=createBrowserIdentity(chrome.storage.local);
 const nextGeneration=()=>generation=Math.max(Date.now(),generation+1);
 globalThis.hermoConnectionStates={};
-const allowedErrors=new Set(['TAB_CLOSED','ORIGIN_CHANGED','LOGIN_REQUIRED','ACTION_UNAVAILABLE','ELEMENT_AMBIGUOUS','OUTPUT_LIMIT_EXCEEDED','UNSUPPORTED_FRAME','TIMEOUT','PERMISSION_REVOKED','PAGE_READ_FAILED']);
+const allowedErrors=new Set(['TAB_CLOSED','ORIGIN_CHANGED','LOGIN_REQUIRED','ACTION_UNAVAILABLE','ELEMENT_AMBIGUOUS','ELEMENT_CHANGED','COMPLETION_CHANGED','OUTPUT_LIMIT_EXCEEDED','UNSUPPORTED_FRAME','TIMEOUT','PERMISSION_REVOKED','PAGE_READ_FAILED','MEDIA_UNSUPPORTED','MEDIA_TOO_LARGE','INVALID_PROBE','PROBE_LIMIT','PROBE_UNAVAILABLE']);
 const terminalReason={TAB_CLOSED:'tab_closed',ORIGIN_CHANGED:'origin_changed',PERMISSION_REVOKED:'permission_revoked'};
 function inScope(url,session){try{const source=new URL(url);return source.origin===session.origin&&source.pathname.startsWith(session.pathPrefix);}catch{return false;}}
 function report(session,state){globalThis.hermoConnectionStates[session.tabId]={state,origin:session.origin,name:session.name??'',generation:session.generation};}
@@ -70,7 +72,7 @@ async function poll(session){
       try{
         if(message.origin!==session.origin||message.path_prefix!==session.pathPrefix||message.expires_at<=Date.now())throw Error('TIMEOUT');
         value=await executeBrowserCommand({chrome,tabId:session.tabId,origin:session.origin,pathPrefix:session.pathPrefix,command:message.command,inspect:inspectDocument,signal:session.abort.signal,deadline:message.expires_at,getVisualFrame:()=>livePreview.getFrame(session),beforeMutation:async()=>{await call(session,'/companion/browser/authorize',{id:message.id});}});
-      }catch(problem){error=allowedErrors.has(problem.message)?problem.message:'PAGE_READ_FAILED';}
+      }catch(problem){error=problem.code==='BROWSER_COMMAND_CANCELLED'?'ACTION_UNAVAILABLE':allowedErrors.has(problem.message)?problem.message:'PAGE_READ_FAILED';}
       if(session.stopped)break;
       // A failed reply never reruns a command: a submission may have happened.
       reason='outcome_unknown';await call(session,'/companion/browser/reply',{id:message.id,ok:!error,...error?{error}:{value}});
@@ -114,30 +116,46 @@ async function pair(message){
     const selected=await chrome.tabs.get(session.tabId);if(selected.incognito||!inScope(selected.url,session))throw Error('Open the selected website in a normal Chrome tab first.');
     await executeBrowserCommand({chrome,tabId:session.tabId,origin:session.origin,pathPrefix:session.pathPrefix,command:{op:'snapshot'},inspect:inspectDocument});
     if(sessions.has(session.tabId))await end(sessions.get(session.tabId));
-    const local=await chrome.storage.local.get('browserContext'),context=local.browserContext??('bc_'+crypto.randomUUID());if(!local.browserContext)await chrome.storage.local.set({browserContext:context});
-    const linked=await call(session,'/companion/browser/pair',{code:message.code,origin:session.origin,authorized:true,protocol:2,capabilities:['panel','read_data','saved_browser','command_guard','workflow_waits','structured_outputs','live_preview'],context_id:context,tab_id:session.tabId},AbortSignal.timeout(15000));
+    const context=await browserIdentity();
+    const linked=await call(session,'/companion/browser/pair',{code:message.code,origin:session.origin,authorized:true,protocol:2,capabilities:['panel','read_data','saved_browser','command_guard','workflow_waits','structured_outputs','live_preview','semantic_target_guard','completion_evidence','locator_probe','extended_waits','typed_outputs','preview_interaction','local_media'],context_id:context,tab_id:session.tabId},AbortSignal.timeout(15000));
     session.token=linked.token;if(linked.path_prefix!==session.pathPrefix)throw Error('The website scope was not accepted.');session.name=linked.app_name;session.state=linked.connection_status==='connected'?'ready':'pending';session.leaseExpiresAt=Number.isFinite(linked.lease_expires_at)?linked.lease_expires_at:Date.now()+4*3600000;
     sessions.set(session.tabId,session);await persist();await panel(session);start(session);return {ok:true,origin:session.origin};
   }catch(error){await end(session,'offline','transport_lost');throw error;}finally{pairing.delete(message.tabId);}
 }
 chrome.runtime.onMessage.addListener((message,sender,respond)=>{
+  if(message?.type==='hermo.browser.identity'){
+    if(sender.id!==chrome.runtime.id||sender.url?.split('#')[0]!==chrome.runtime.getURL('controller.html'))return;
+    browserIdentity().then(context_id=>respond({ok:true,context_id}),()=>respond({ok:false}));return true;
+  }
   if(['hermo.preview.status','hermo.preview.start','hermo.preview.stop'].includes(message?.type)){
     if(sender.id!==chrome.runtime.id||sender.tab||sender.url!==chrome.runtime.getURL('popup.html'))return;
     ready.then(async()=>{
       const session=sessions.get(message.tabId);
       if(!session||session.stopped){respond({ok:false,state:'disabled',error:'Connect this website tab to Hermo first.'});return;}
       const tab=await chrome.tabs.get(session.tabId);if(!inScope(tab.url,session)){await end(session,'offline','origin_changed');respond({ok:false,state:'disabled'});return;}
-      if(message.type==='hermo.preview.start')respond({ok:true,...await livePreview.start(session)});
-      else if(message.type==='hermo.preview.stop'){await livePreview.stop(session);respond({ok:true,state:'disabled'});}
-      else respond({ok:true,...await livePreview.status(session)});
+      let preview;
+      if(message.type==='hermo.preview.start')preview=await livePreview.start(session);
+      else if(message.type==='hermo.preview.stop'){await livePreview.stop(session);preview={state:'disabled'};}
+      else preview=await livePreview.status(session);
+      respond({ok:true,...preview,connection_state:session.state,connection_name:session.name??''});
     }).catch(error=>respond({ok:false,state:'unavailable',error:error instanceof Error?error.message:'Live preview is unavailable.'}));return true;
   }
   if(message?.type==='hermo.pair'){
     if(sender.id!==chrome.runtime.id||sender.tab||!['popup.html','connect.html'].some(path=>sender.url?.startsWith(chrome.runtime.getURL(path))))return;
-    pair(message).then(respond,error=>respond({ok:false,error:error.message}));return true;
+    pair(message).then(respond,error=>respond({ok:false,error:error.message,code:error.code}));return true;
   }
   if(message?.type==='hermo.panel.stop'){
     ready.then(()=>{const session=sessions.get(sender.tab?.id);if(!session||message.controller!==session.id||sender.id!==chrome.runtime.id||!inScope(sender.url,session)){respond({ok:false});return;}return end(session).then(()=>respond({ok:true}));});return true;
+  }
+  if(message?.type==='hermo.popup.stop'){
+    if(sender.id!==chrome.runtime.id||sender.tab||sender.url!==chrome.runtime.getURL('popup.html'))return;
+    ready.then(async()=>{
+      const session=sessions.get(message.tabId);
+      if(!session||session.stopped){respond({ok:false});return;}
+      const [tab,selected]=await Promise.all([chrome.tabs.get(session.tabId),chrome.tabs.query({active:true,currentWindow:true})]);
+      if(selected.length!==1||selected[0].id!==session.tabId||tab.incognito||!inScope(tab.url,session)){respond({ok:false});return;}
+      await end(session);respond({ok:true});
+    }).catch(()=>respond({ok:false}));return true;
   }
 });
 chrome.tabs.onRemoved.addListener(tabId=>{void ready.then(()=>{const session=sessions.get(tabId);if(session)void end(session,'offline','tab_closed');delete globalThis.hermoConnectionStates[tabId];});});

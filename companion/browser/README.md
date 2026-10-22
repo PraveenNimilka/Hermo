@@ -1,11 +1,48 @@
-# Selected Chrome tab companion 0.7.0
+# Selected Chrome tab companion 0.7.10
 
-Requires Chrome 120 or later. Load this directory using chrome://extensions > Developer mode > Load unpacked in the Chrome profile where you use the website. When updating, reload Hermo's extension, then reconnect the saved website tab. This companion is separate from the optional Google-cookie import extension under companion/chrome.
+Version 0.7.10 adds observation-only locator inspection, navigation readiness
+checks and null-only output extraction. These commands require negotiated
+capabilities; older links keep their supported command set. Reload the existing
+installation in place and reconnect the selected tab to use the additions. No
+new Chrome permissions are requested. Locator inspection never fills or clicks;
+applying a reviewed repair changes only the saved workflow draft.
+
+Version 0.7.8 refreshes the popup and website panel with clear connection states,
+compact controls and motion that respects reduced-motion preferences. Reopening
+the popup shows the existing connection; reconnecting requires a fresh code and
+authorization. Disconnect ends tab access; Stop preview only ends visual sharing.
+The companion retains bounded capture of selected page-local raster images for
+temporary encrypted local download links. It keeps concurrent tab connections on one persisted browser identity.
+Reload the existing installation from the same folder to preserve that identity;
+separate Chrome profiles remain separate saved browsers. It also recognizes generated-image preview containers when selecting the
+latest image result. Select its URL for media generation; a description is a
+separate text output. It also includes guarded live-preview control picking and nested website
+scrolling. Reload the extension in place, reconnect the website, and enable
+live preview. Preview button clicks can be recorded; input clicks open Hermo's
+input editor. Stale, replaced, obscured or moved targets are rejected.
+
+If Chrome storage was cleared or the unpacked extension moved folders, its local
+browser identity can change while Hermo still remembers the previous identity.
+Create a fresh authorized Connect code in Hermo, then enter it in the intended
+website's companion. Browser identity recovery is included automatically.
+This owner-authorized code repairs only that app's browser binding. Shared apps
+retain their original bindings; saved actions and API keys are preserved. A
+normal extension worker reload retains its persisted identity. Runtime restarts
+end live tab grants, so reconnect with a fresh code after unlocking Hermo.
+
+After updating, reload this extension in `chrome://extensions` and reconnect
+the selected website tab. Version 0.7.2 advertises semantic target guards;
+workflows using role/name or label guards require that capability. Legacy
+CSS-only workflows retain their previous behavior and targeting limitations.
+Explicit completion-marker policies additionally require the `completion_evidence`
+capability in 0.7.2, which checks marker baselines immediately before input.
+
+Requires Chrome 120 or later. Load this directory using chrome://extensions > Developer mode > Load unpacked in the Chrome profile where you use the website. When updating, reload Hermo's extension, then reconnect the saved website tab. This companion is separate from the optional Google-cookie import extension under integrations/google-session-extension.
 
 ## Connect
 
 1. Create a Connect code for the saved website in Hermo.
-2. Open the companion on that exact website tab, paste the code, authorize the selected tab, and press Connect selected tab. The default runtime address is `http://127.0.0.1:4318`; expand **Local runtime address** only if you use a different local port.
+2. Open the companion on that exact website tab, paste the code, authorize the selected tab, and press Connect selected tab. The default runtime address is `http://127.0.0.1:4317`; expand **Local runtime address** only if you use a different local port.
 3. Close the popup. The fixed website panel immediately shows **Hermo connected** and **Stop**. Hermo finishes pairing automatically; no account name/email detection or confirmation is required.
 4. Record the task, select its outputs, test, and publish. Put the published action's hm_live_ API key in your consumer app, never in the companion popup.
 
@@ -19,7 +56,7 @@ Chat/text, media generation, read-only data, search/extraction, form submission/
 
 The generic consumer app is /workflow-data.html; the chat consumer is /workflow-chat.html. Keys/history remain in page memory and only verified completed results are displayed. Website changes can require reselecting controls/outputs; existing action IDs are retained by explicit draft repair where supported.
 
-For a ChatGPT layout problem, open the companion on the conversation tab and
+For a supported conversation-layout problem, open the companion on the conversation tab and
 choose **Inspect chat layout → Inspect chat layout**, then **Copy diagnostics**.
 This explicit read-only check does not send a message, pair a tab or change its
 connection. The report includes bounded message structure and selected website

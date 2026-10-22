@@ -15,7 +15,7 @@ The companion requests cookie access for only the reviewed Google hosts when you
 5. In **Connect app**, choose your saved **Google browser sign-in**. For an existing connection, expand **Google sign-in in this private browser**, choose the saved sign-in, and select **Use saved Google sign-in**.
 6. Complete the target website's own sign-in. **Return to app** returns to its entry page. Refresh the preview, confirm the target website's account marker, then test and publish its actions again.
 
-For a Google redirect blocked in an existing ChatGPT connection, expand **Review Google sign-in and display services**, review and approve the listed exact domains, and retry that Google tab. A Google sign-in saved in a different connection does not silently grant this connection access. Unapproved origins remain blocked deliberately.
+For a Google redirect blocked in an existing website connection, expand **Review Google sign-in and display services**, review and approve the listed exact domains, and retry that Google tab. A Google sign-in saved in a different connection does not silently grant this connection access. Unapproved origins remain blocked deliberately.
 
 ## Preview and permissions
 
@@ -31,7 +31,7 @@ Applying a profile creates a draft browser session. Published API execution cont
 
 Credentials are not imported from your everyday Chrome profile, and Chrome Sync is not enabled. Server restart can restore explicitly saved sessions; unsaved sign-in progress is only in memory. Google can expire or reject sessions. This is still an automation-controlled browser, not a certification that a human is browsing.
 
-Google explains its [supported-browser restrictions](https://support.google.com/accounts/answer/7675428?hl=en). Playwright documents [authenticated-state reuse](https://playwright.dev/docs/auth). A persistent session cannot guarantee that Google, ChatGPT, Claude, or another provider will accept the browser or remove verification. A search engine choice does not change those rules.
+Google explains its [supported-browser restrictions](https://support.google.com/accounts/answer/7675428?hl=en). Playwright documents [authenticated-state reuse](https://playwright.dev/docs/auth). A persistent session cannot guarantee that a website will accept the browser or remove verification. A search engine choice does not change those rules.
 
 Automated Google tests use synthetic accounts and cookies. They do not establish
 that Google or another website will accept a real sign-in or reused session.

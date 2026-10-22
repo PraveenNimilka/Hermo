@@ -1,0 +1,52 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomBytes,randomUUID} from 'node:crypto';
+import {resolve} from 'node:path';
+import {createApp} from '../server/index.mjs';
+
+test('explicit owner reconnect repairs changed identities without resetting sibling apps or saved APIs',async()=>{
+  const previous=process.env.HERMO_MASTER_KEY;process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');
+  const port=4469,dataDir=resolve('work/browser-reconnect',randomUUID());
+  let runtime=await createApp({port,dataDir}),cookie='',csrf='';
+  const call=async(path,body,headers={})=>{const response=await runtime.app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:`127.0.0.1:${port}`,cookie,'x-hermo-csrf':csrf,...headers},...body===undefined?{}:{payload:body}});if(response.headers['set-cookie'])cookie=response.headers['set-cookie'].split(';')[0];return {status:response.statusCode,value:response.json()};};
+  const ok=async(...args)=>{const r=await call(...args);assert.ok(r.status<300,JSON.stringify(r));return r.value;};
+  const ext={'x-hermo-extension-id':'a'.repeat(32),origin:'chrome-extension://'+'a'.repeat(32)};
+  const oldContext='bc_'+randomUUID(),newContext='bc_'+randomUUID();
+  const pair=(code,context,tab)=>call('/companion/browser/pair',{code,origin:runtime.origin,authorized:true,protocol:2,context_id:context,tab_id:tab,capabilities:['panel','read_data','saved_browser','command_guard']},ext);
+  const code=(cid,replace)=>ok(`/studio/connections/${cid}/browser-link`,{authorized:true,...replace===undefined?{}:{replace_browser:replace}});
+  const browserPayload=bid=>runtime.store.unseal(runtime.store.db.prepare('SELECT payload FROM browser_workspaces WHERE id=?').get(bid).payload);
+  try{
+    csrf=(await ok('/studio/session')).csrf;csrf=(await ok('/studio/setup',{password:'synthetic-browser-reconnect-owner'})).csrf;
+    const browser=(await ok('/studio/browser-workspaces',{name:'Original Chrome',kind:'current'})).browser;
+    const connection=async name=>(await ok('/studio/connections',{name,url:runtime.origin+'/sandbox/',authorized:true,browser_mode:'connected',browser_workspace_id:browser.id})).connection;
+    const a=await connection('First app'),b=await connection('Second app');
+    assert.equal((await pair((await code(a.id)).code,oldContext,1)).status,200);
+    const sibling=await pair((await code(b.id)).code,oldContext,2);assert.equal(sibling.status,200);
+    const at=new Date().toISOString();
+    runtime.store.db.prepare('INSERT INTO workflows VALUES (?,?,?,?,?,?,?,?,?)').run('wf_reconnect',a.id,'Saved action','reconnect.saved','draft','version',runtime.store.seal({steps:[],outputs:[],inputs:{}}),null,at);
+    runtime.store.db.prepare('INSERT INTO api_keys VALUES (?,?,?,?,?,?,?,?)').run('key_reconnect','Saved key','synthetic_hash','tail','wf_reconnect','2099-01-01T00:00:00.000Z',null,at);
+    const before={workflow:runtime.store.db.prepare('SELECT * FROM workflows').all(),keys:runtime.store.db.prepare('SELECT * FROM api_keys').all()};
+    const refused=await pair((await code(a.id,false)).code,newContext,3);assert.equal(refused.value.error.code,'WRONG_BROWSER');
+    assert.equal(browserPayload(browser.id).context_id,oldContext,'explicitly restricted grants cannot switch profiles');
+    assert.equal((await call(`/studio/connections/${a.id}/browser-link`,{authorized:true,replace_browser:true},{cookie:''})).status,401);
+    assert.equal((await call(`/studio/connections/${a.id}/browser-link`,{authorized:true,replace_browser:true},{'x-hermo-csrf':'wrong'})).status,403);
+    const grant=await code(a.id);
+    assert.equal((await pair(grant.code,newContext,3)).status,200);
+    assert.equal((await pair(grant.code,newContext,3)).value.error.code,'BROWSER_LINK_EXPIRED','recovery codes remain one-use');
+    let browsers=(await ok('/studio/browser-workspaces')).browsers;
+    const moved=browsers.find(value=>value.apps.some(app=>app.id===a.id));assert.notEqual(moved.id,browser.id);
+    assert.equal(browserPayload(browser.id).context_id,oldContext);assert.equal(browserPayload(moved.id).context_id,newContext);
+    assert.equal((await ok(`/studio/connections/${b.id}/browser-link`)).linked,true,'other app stays connected');
+    assert.equal((await call('/companion/browser/poll',{}, {...ext,authorization:'Bearer '+sibling.value.token})).status,200,'other app retains its actual token');
+    assert.equal((await pair((await code(b.id,true)).code,newContext,4)).status,200);
+    browsers=(await ok('/studio/browser-workspaces')).browsers;
+    assert.equal(browsers.length,2,'reuse the already bound replacement browser');
+    assert.equal(browsers.find(value=>value.id===moved.id).apps.length,2);
+    assert.deepEqual(runtime.store.db.prepare('SELECT * FROM workflows').all(),before.workflow);assert.deepEqual(runtime.store.db.prepare('SELECT * FROM api_keys').all(),before.keys);
+    await runtime.app.close();runtime=await createApp({port,dataDir});cookie='';
+    csrf=(await ok('/studio/session')).csrf;csrf=(await ok('/studio/login',{password:'synthetic-browser-reconnect-owner'})).csrf;
+    assert.equal((await pair((await code(a.id)).code,newContext,3)).status,200,'runtime restart retains the repaired identity without recovery');
+    assert.equal((await pair((await code(a.id,true)).code,newContext,3)).status,200,'ordinary repeat reconnect does not create another saved browser');
+    assert.equal((await ok('/studio/browser-workspaces')).browsers.length,2);
+  }finally{await runtime.app.close();if(previous===undefined)delete process.env.HERMO_MASTER_KEY;else process.env.HERMO_MASTER_KEY=previous;}
+});

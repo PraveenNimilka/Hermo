@@ -4,7 +4,7 @@ export function extractOutputDocument(command){
   try{
     let mappingNodes=0;
     const validate=(mapping,depth=0,item=false)=>{
-      if(!mapping||typeof mapping!=='object'||Array.isArray(mapping)||depth>4||++mappingNodes>64||!['string','number','boolean','url','object','array',undefined].includes(mapping.type)||mapping.frame_path?.length||mapping.source||mapping.selector!==undefined&&(typeof mapping.selector!=='string'||!mapping.selector||mapping.selector.length>3000||/[\u0000-\u001f\u007f]/.test(mapping.selector)||/(?:>>|javascript\s*:|(?:^|\s)(?:xpath|text|internal:[\w-]+)\s*=|:(?:has-text|text|text-is|text-matches|nth-match)\s*\(|=>|\b(?:eval|Function)\s*\()/i.test(mapping.selector)))throw Error('ACTION_UNAVAILABLE');
+      if(!mapping||typeof mapping!=='object'||Array.isArray(mapping)||depth>4||++mappingNodes>64||!['string','number','boolean','url','null','object','array',undefined].includes(mapping.type)||mapping.frame_path?.length||mapping.source||mapping.selector!==undefined&&(typeof mapping.selector!=='string'||!mapping.selector||mapping.selector.length>3000||/[\u0000-\u001f\u007f]/.test(mapping.selector)||/(?:>>|javascript\s*:|(?:^|\s)(?:xpath|text|internal:[\w-]+)\s*=|:(?:has-text|text|text-is|text-matches|nth-match)\s*\(|=>|\b(?:eval|Function)\s*\()/i.test(mapping.selector)))throw Error('ACTION_UNAVAILABLE');
       if(mapping.type==='object'){
         if(!Array.isArray(mapping.fields)||!mapping.fields.length||mapping.fields.length>16)throw Error('ACTION_UNAVAILABLE');
         const names=new Set();for(const child of mapping.fields){if(!/^[a-z][a-z0-9_]{1,39}$/.test(child.name)||names.has(child.name))throw Error('ACTION_UNAVAILABLE');names.add(child.name);validate(child,depth+1);}
@@ -47,12 +47,12 @@ export function extractOutputDocument(command){
       if(mapping.read_attribute){
         if(!['src','href','alt','download','poster'].includes(mapping.read_attribute))throw Error('ACTION_UNAVAILABLE');
         if(['alt','download'].includes(mapping.read_attribute))value=target.getAttribute(mapping.read_attribute)??'';
-        else{const raw=mapping.read_attribute==='src'?(target.currentSrc||target.getAttribute('src')||target.querySelector('source[src]')?.getAttribute('src')):target.getAttribute(mapping.read_attribute);if(!raw)return undefined;const url=new URL(raw,location.href);if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw Error('ACTION_UNAVAILABLE');value=url.href;}
+        else{const raw=mapping.read_attribute==='src'?(target.currentSrc||target.getAttribute('src')||target.querySelector('source[src]')?.getAttribute('src')):target.getAttribute(mapping.read_attribute);if(!raw)return undefined;const url=new URL(raw,location.href);if(!(['https:','http:'].includes(url.protocol)||target.matches('img')&&url.protocol==='blob:'&&url.origin===location.origin)||url.username||url.password)throw Error('MEDIA_UNSUPPORTED');value=url.href;}
       }else value=(target.innerText??target.textContent??'').trim();
       characters+=value.length;if(value.length>4096||characters>131072)throw Error('OUTPUT_LIMIT_EXCEEDED');return value;
     };
     const value=read(command.mapping,document);
     streaming ||= [...document.querySelectorAll('button,[role="button"]')].some(button=>visible(button)&&/^stop$|stop (generating|streaming|response|generation)/i.test(button.getAttribute('aria-label')??button.textContent??''));
     return {value,count:Array.isArray(value)?value.length:value===undefined?0:1,streaming,identity:registry.document+':'+identities.join(',')};
-  }catch(error){return {hermo_error:['ORIGIN_CHANGED','LOGIN_REQUIRED','ELEMENT_AMBIGUOUS','OUTPUT_LIMIT_EXCEEDED'].includes(error.message)?error.message:'ACTION_UNAVAILABLE'};}
+  }catch(error){return {hermo_error:['ORIGIN_CHANGED','LOGIN_REQUIRED','ELEMENT_AMBIGUOUS','OUTPUT_LIMIT_EXCEEDED','MEDIA_UNSUPPORTED'].includes(error.message)?error.message:'ACTION_UNAVAILABLE'};}
 }

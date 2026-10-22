@@ -1,6 +1,6 @@
 export type ActionType='chat'|'generate_media'|'read'|'read_data'|'search_extract'|'submit_form'|'custom';
 export type ReadAttribute='src'|'href'|'alt'|'download'|'poster';
-export type CapturedOutput={name:string;type?:'string'|'number'|'boolean'|'url'|'array'|'object';media_type?:'image'|'video'|'audio'|'file';required?:boolean;nullable?:boolean;fields?:CapturedOutput[];items?:Omit<CapturedOutput,'name'>;read_attribute?:ReadAttribute};
+export type CapturedOutput={name:string;type?:'string'|'number'|'integer'|'boolean'|'url'|'array'|'object';media_type?:'image'|'video'|'audio'|'file';required?:boolean;nullable?:boolean;fields?:CapturedOutput[];items?:Omit<CapturedOutput,'name'>;read_attribute?:ReadAttribute;enum?:(string|number|boolean)[];minimum?:number;maximum?:number;minLength?:number;maxLength?:number;pattern?:string;format?:'date'|'date-time'|'time';minItems?:number;maxItems?:number;uniqueItems?:boolean};
 
 export function isConversationOutput(item:{read_mode?:string;semantic_role?:string;label:string}){
   return item.read_mode==='last'&&(item.semantic_role==='user'||item.semantic_role==='assistant'||!item.semantic_role&&['Latest submitted message','Latest assistant response'].includes(item.label));

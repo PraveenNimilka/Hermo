@@ -34,10 +34,11 @@ The normal flow opens no controller tab.
 For a public, read-only website, choose **No — read the website without an
 account**, expand **Advanced browser options**, and select **Use an isolated
 browser**. Review the loaded page and choose **Confirm public source**. Public
-managed runs use anonymous sessions and allow only GET/HEAD retrieval. They do
-not support form submission, media generation or a silent fallback to your
-signed-in Chrome session. Private isolated connections have separate manual
-sign-in and identity checks.
+managed runs use anonymous sessions. Retrieval workflows allow GET/HEAD only;
+website-action workflows can submit HTTP requests and use secure sockets after
+verification and permission review. There is no silent fallback to signed-in
+Chrome. Private managed connections retain dedicated encrypted disk profiles and
+have separate manual sign-in and identity checks.
 
 ## 2. Demonstrate the action
 
@@ -114,6 +115,28 @@ test inputs, and run the test. Inspect the step statuses, timings, extracted
 output and verification evidence. Repair missing outputs before publishing.
 Changing the draft or execution target requires a new verified test.
 
+For a step that submits, deletes, purchases or updates data, select **Pause for
+owner approval before this step** in the step editor and save the draft. You
+choose the checkpoints; Hermo cannot infer every website side effect from a
+button label. Fills, selections and navigation can also trigger changes, so put
+the checkpoint before the first action whose effect needs your approval.
+
+Earlier lookup/wait steps continue automatically. At a checkpoint, the run
+shows **Awaiting owner approval** in **Test action** or **Runs**. Inspect the
+website and recorded target, choose **Review approval**, then **Approve this
+step**, or choose **Reject step**. Each decision applies once to that run and
+step. Targets and browser authority are checked again before continuing.
+Rejection, cancellation, expiry, Stop or revocation prevents later actions;
+earlier effects cannot be undone. Waiting consumes the total run timeout
+(at most 300 seconds) and holds the current single-worker local queue.
+
+A permission preview is a static review, not an executable dry run. Replaying
+only the early steps would still perform their real website actions. A missing
+or ambiguous locator fails. When recorded role/name or label metadata exists,
+a mismatched target also fails instead of falling back to a differently named
+control. Legacy CSS-only recordings have no saved semantic identity; a unique
+CSS match can change meaning and should be repaired and retested.
+
 Compatible chat drafts also offer **Repair this chat recording** in the test
 dialog. Review its authorization before replacing the recording with Fill and
 Send steps and latest-message outputs. Repair clears verification; test a fresh,
@@ -121,7 +144,23 @@ completed reply before publishing.
 
 ## 5. Publish and call the API
 
-After a successful test, choose **Publish API**. Copy the one-time scoped key
+For nested input/output editing, explicit scalar input paths, bounded waits and
+observation-only locator repairs, see [Structured workflows](architecture/structured-workflows.md).
+For project assignment, structural templates, JSON playground requests and
+sanitized reliability reports, see [Developer workflows](developer-workflows.md).
+
+After a successful test, inspect **Review workflow permissions**: browser
+connection, allowed origins, enabled steps, dynamic inputs, output targets,
+approval checkpoints and safety limits. Check the acknowledgment, then choose
+**Publish API**. The dashboard submits the reviewed definition and permission
+fingerprint; a changed draft or browser scope requires another review. API docs
+also shows the currently published revision's permissions.
+
+When a draft changes the API contract, review **Changes from the live version**
+and acknowledge the separate breaking-change checkbox before publishing. Normal
+website permission consent alone does not accept a change that can affect clients.
+
+Copy the one-time scoped key
 and endpoint. The API is local to the running runtime; a key is not public
 hosting and does not remove the website's access requirements.
 
@@ -163,6 +202,13 @@ only when `status` is `succeeded`; `queued`, `running` and `verifying` are still
 in progress. Failures and cancellation have their own status/error evidence.
 The examples above do not poll automatically to completion.
 
+Approval-gated runs retain `status: "running"` while exposing
+`phase: "awaiting_approval"` and a bounded `approval` record. Continue polling or
+cancel the run. Only the unlocked owner dashboard can decide; REST consumer
+keys and MCP tools have no approval authority. `GET /v1/action-contract`, MCP
+`get_contract` and the OpenAPI extension `x-hermo-approval-required-steps`
+identify the enabled checkpoints in the published definition.
+
 Use a new idempotency key for each new logical request. If you lose the admission
 response, resend the **same input and idempotency key** to retrieve its original
 receipt. Do not replace it with a new ID and risk repeating a website submission.
@@ -172,8 +218,8 @@ For MCP, use a local client supporting Streamable HTTP and Bearer headers. Point
 it at `http://127.0.0.1:4317/mcp` and use the same workflow-scoped key. Discover
 the actual `action_...` tool, call it with `{input, request_id}`, then poll
 `get_run` with its run ID. `get_contract` and `cancel_run` use the same key
-boundaries. Client configuration syntax varies; copy the configuration in
-**API docs → Connect your AI agent**.
+boundaries. Client configuration syntax varies; use the MCP connection section
+in **API docs** for the local endpoint and authorization configuration.
 
 ## 6. Inspect failures and maintain versions
 
@@ -191,19 +237,43 @@ to a previously published revision. Already accepted runs retain their revision.
 The `/versions/1/` endpoint segment is API compatibility, not the active workflow
 revision number.
 
+To call a specific immutable publication, read `GET /v1/action-revisions` with
+the workflow's scoped key, then fetch
+`GET /v1/action-contract?revision=NUMBER`. Submit its input to
+`POST /v1/actions/SLUG/revisions/NUMBER/runs` with a new logical request ID in
+`Idempotency-Key`. This selects a saved contract without changing the live API.
+In MCP, use `get_contract` with `{revision}` and `invoke_revision` with
+`{revision,input,request_id}`. Both interfaces enforce the same browser authority,
+approval gates and verification. A request ID already used for one revision
+cannot be repurposed for another.
+
+**Roll back live API** now displays the selected revision's contract and website
+permission changes. When these require review, confirm the separate acknowledgment
+before **Confirm rollback** becomes available. The working draft stays intact.
+For exact REST routes, owner review fields and recovery behavior, see
+[published contracts and revision invocation](architecture/published-contracts.md).
+
 ## Media and website preview
 
-Choose **Generate media** for a website generation task in connected Chrome.
+Choose **Generate media** for a website generation task in connected Chrome or
+an authorized managed connection with explicitly reviewed website-action scope.
 Record its input and generation control, wait for the completed result, and
 select its image, video, audio or download **URL** in Outputs. If each result
 creates a new element, the draft editor's **Result targeting** can select a
 supported latest-result target, such as **Latest image result**. Save, verify a
 new completed result, and publish again.
 
-Hermo returns validated media links, not a new media-hosting service. Protected,
-expired, `blob:` or canvas-only assets may not be portable to another app.
-The API does not copy Chrome cookies to make those links accessible. Unsupported
-or missing media fails verification; inspect and repair its output selection.
+Hermo returns validated HTTP(S) media links. With companion 0.7.8, a selected
+page-local (`blob:`) image is captured after it loads and passes freshness checks.
+PNG, JPEG, WebP and GIF images up to 8 MiB are stored encrypted locally; the
+returned loopback download link expires after one hour. Anyone with that link
+can download that single image until expiry; share it only with trusted callers.
+Revoking its issuing API key also revokes its image links. The temporary image
+cache is capped at 128 MiB and run deletion removes its images.
+Protected remote links, page-local video/audio and canvas-only results may not
+be portable. Hermo does not transfer Chrome cookies or fetch arbitrary remote
+assets to make them accessible. Five minutes is a maximum wait, not a delay: a
+fresh loaded image completes as soon as it settles.
 
 For an opaque asset URL, set **Output mappings → Media preview** to Image,
 Video, Audio or Download link, then save, verify and publish. In the API
@@ -214,17 +284,30 @@ host. Video and audio players do not autoplay.
 To see the website's actual appearance inside Hermo, open the companion on the
 paired website tab and choose **Enable live preview**, then return to Hermo's
 **Website** view. **Detected fields** is a separate simplified inspection. The
-visual preview is view-only; record through Interact. Capture is explicit,
+live preview supports pointer clicks on detected controls and wheel scrolling
+inside the website. Button clicks during recording become replayable steps;
+clicking an input opens its Interact editor so its value can be bound to an API
+parameter. Use the Interact controls and Scroll buttons for keyboard access.
+Changed or stale targets fail instead of clicking another element. Reload
+companion 0.7.8 and reconnect to enable these controls. Capture is explicit,
 limited to one tab, expires after at most 15 minutes, and stops after two minutes
 without frame requests. Stopping preview preserves the automation connection.
 API keys cannot request these owner-only preview frames.
 
 ## Keys and runtime availability
 
-Create keys from **API docs → Create key** and manage them under **Privacy**.
+Create keys from **API docs → Create key**. Open **Test action → API keys** to
+manage just that workflow's keys, or use **Privacy** for the project list.
 Keys expire after 30 days, are scoped to one action, and read only their own
-runs. The secret is shown once. To replace a key, create a new one, update its
-consumer, then revoke the old one. Review destructive dialogs and type the exact
+runs. The secret is shown once. **Rotate key** atomically revokes the old key and
+shows its replacement once; update your integration with the replacement.
+Revoking or rotating cancels that key's queued/active runs and preserves the
+shared browser connection and other workflow keys. An already-issued website
+action may finish before cancellation can stop it; an uncertain outcome is not
+replayed. If the companion fails to acknowledge a cancelled command before its
+deadline, Hermo ends the connection rather than allowing overlapping work.
+For a staged cutover, create another key, update the consumer, then revoke the
+old key. Review destructive dialogs and type the exact
 confirmation requested before deleting saved resources.
 
 | Action | Effect |

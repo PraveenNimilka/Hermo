@@ -42,7 +42,8 @@ test('saved-browser connection page, website panel, output-only UI/API/MCP, Stop
   app.get('/sandbox/weather',async(_,reply)=>reply.type('text/html').send('<!doctype html><meta charset="utf-8"><title>Weather fixture</title><h1>Weather</h1><a href="/login">Sign in</a><p id="place">Colombo</p><output id="temperature">28 °C</output><p id="condition">Cloudy</p>'));
   await app.listen({port,host:'127.0.0.1'});let context,cookie='',csrf='',controllerTarget;
   const call=async(path,body,extra={})=>{const response=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{...cookie?{cookie}:{},...body===undefined?{}:{'content-type':'application/json','x-hermo-csrf':csrf},...extra},body:body===undefined?undefined:JSON.stringify(body)});const set=response.headers.get('set-cookie');if(set?.startsWith('hermo_owner_'))cookie=set.split(';')[0];return {status:response.status,value:await response.json()};};
-  const ok=async(...args)=>{const r=await call(...args);assert.ok(r.status<300,JSON.stringify(r));return r.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(...args)=>{if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(args[0])){const review=await ok(args[0].replace(/\/publish$/,'/permissions'));args[1]={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...args[1]};}const r=await call(...args);assert.ok(r.status<300,JSON.stringify(r));return r.value;};
   const finish=async rid=>{for(let n=0;n<400;n++){const r=await ok('/studio/runs/'+rid);if(['succeeded','failed','cancelled'].includes(r.status))return r;await new Promise(done=>setTimeout(done,100));}throw Error('Run timeout');};
   try{
     csrf=(await ok('/studio/session')).csrf;csrf=(await ok('/studio/setup',{password:'synthetic-saved-browser-password'})).csrf;
@@ -83,7 +84,7 @@ test('saved-browser connection page, website panel, output-only UI/API/MCP, Stop
       await cdp.send('Target.closeTarget',{targetId:pageTarget.targetId});await site.locator('#hermo-connection-panel').waitFor();
     };
     await pair();await ok(`/studio/connections/${c.id}/confirm`,{public_source:true});
-    const differentBrowserGrant=await ok(`/studio/connections/${c.id}/browser-link`,{authorized:true});assert.equal((await call('/companion/browser/pair',{code:differentBrowserGrant.code,origin,authorized:true,protocol:2,capabilities:['panel','read_data','saved_browser','command_guard'],tab_id:2,context_id:'bc_'+crypto.randomUUID()},extensionHeaders)).value.error.code,'WRONG_BROWSER');
+    const differentBrowserGrant=await ok(`/studio/connections/${c.id}/browser-link`,{authorized:true,replace_browser:false});assert.equal((await call('/companion/browser/pair',{code:differentBrowserGrant.code,origin,authorized:true,protocol:2,capabilities:['panel','read_data','saved_browser','command_guard'],tab_id:2,context_id:'bc_'+crypto.randomUUID()},extensionHeaders)).value.error.code,'WRONG_BROWSER');
     let snapshot=await ok(`/studio/connections/${c.id}/browser`);assert.equal(snapshot.can_confirm,true);assert.equal(snapshot.elements.some(x=>x.label==='Stop'||x.preview?.includes('Hermo connected')),false);
     await context.addCookies([{name:'hermo_owner_'+port,value:cookie.split('=')[1],url:origin+'/studio',httpOnly:true,sameSite:'Strict'}]);
     const ui=await context.newPage(),errors=[];ui.on('pageerror',e=>errors.push(e.message));await ui.goto(origin+'/#connections');await ui.getByRole('heading',{name:'Saved browsers',exact:true}).waitFor();await ui.waitForTimeout(400);await ui.screenshot({path:join(directory,'saved-browsers.png'),fullPage:true});
@@ -127,6 +128,98 @@ test('saved-browser connection page, website panel, output-only UI/API/MCP, Stop
       assert.equal(store.db.prepare('SELECT revoked_at FROM api_keys WHERE id=?').get(key.id).revoked_at,null);assert.equal(store.db.prepare('SELECT status FROM workflows WHERE id=?').get(wf.id).status,'published');assert.equal(await site.locator('#temperature').innerText(),'28 °C');
       await pair();assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).confirmed,true);assert.equal((await finish((await ok('/v1/actions/weather.read/versions/1/runs',{input:{}},{...headers,'idempotency-key':'reconnected'})).run_id)).status,'succeeded');
       await ok(`/studio/connections/${c.id}/stop`,{});assert.equal((await ok('/studio/browser-workspaces')).browsers[0].apps[0].id,c.id);await ok(`/studio/browser-workspaces/${browser.id}/reset-context`,{authorized:true});assert.equal(store.db.prepare('SELECT revoked_at FROM api_keys WHERE id=?').get(key.id).revoked_at,null);
+    });
+    await t.test('reinstalled companion requires owner recovery and keeps the published API working',async()=>{
+      await pair();
+      const savedDefinition=store.db.prepare('SELECT payload,version,status,test_version FROM workflows WHERE id=?').get(wf.id);
+      const originalContext=store.unseal(store.db.prepare('SELECT payload FROM browser_workspaces WHERE id=?').get(browser.id).payload).context_id;
+      const replacementContext='bc_'+crypto.randomUUID();
+      await evaluate(controllerTarget,`chrome.storage.local.set({browserContext:${JSON.stringify(replacementContext)}}).then(()=>true)`);
+      // Reinstallation replaces extension storage and starts a new worker. A
+      // running worker correctly keeps its already persisted identity cached.
+      const worker=(await cdp.send('Target.getTargets')).targetInfos.find(target=>target.type==='service_worker'&&target.url.endsWith('/background.mjs'));
+      assert.ok(worker);const workerSession=await context.newCDPSession(site),workerVersions=new Map();
+      workerSession.on('ServiceWorker.workerVersionUpdated',({versions})=>{for(const version of versions)workerVersions.set(version.versionId,version);});
+      await workerSession.send('ServiceWorker.enable');
+      for(let n=0;n<40&&![...workerVersions.values()].some(version=>version.scriptURL===worker.url);n++)await new Promise(done=>setTimeout(done,100));
+      const workerVersion=[...workerVersions.values()].find(version=>version.scriptURL===worker.url);assert.ok(workerVersion);
+      await workerSession.send('ServiceWorker.stopWorker',{versionId:workerVersion.versionId});await workerSession.detach();
+      await ui.goto(origin+'/#connections');await ui.reload();await ui.getByRole('heading',{name:'Saved browsers',exact:true}).waitFor();await ui.locator('.connection-card').filter({has:ui.getByRole('heading',{name:'Weather',exact:true})}).getByRole('button',{name:'Open browser',exact:true}).click();
+      const setup=ui.locator('.connected-tab-setup');await setup.waitFor();if(await setup.getAttribute('open')===null)await setup.getByText('Connect your website tab',{exact:true}).click();
+      await setup.getByRole('checkbox',{name:/I authorize Hermo to read this website tab/}).check();
+      assert.equal(await setup.locator('form').getByRole('checkbox').count(),1,'one authorization checkbox; recovery is automatic');
+      await setup.getByRole('button',{name:'Create Connect code',exact:true}).click();
+      const failedGrant=await ok(`/studio/connections/${c.id}/browser-link`,{authorized:true,replace_browser:false});
+      await site.bringToFront();
+      const target=(await cdp.send('Target.getTargets',{filter:[{type:'tab',exclude:false},{exclude:true}]})).targetInfos.find(x=>x.url===site.url());
+      assert.ok(target,'selected website has a browser target');await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:target.targetId});
+      let popup;
+      for(let n=0;n<60;n++){
+        popup=(await cdp.send('Target.getTargets')).targetInfos.find(x=>x.url.endsWith('/popup.html'));
+        if(popup&&await evaluate(popup.targetId,"document.documentElement.dataset.hermoReady==='true'").catch(()=>false))break;
+        await new Promise(done=>setTimeout(done,100));
+      }
+      assert.ok(popup,'real companion popup opens');
+      await evaluate(popup.targetId,`document.querySelector('#workspace').value=${JSON.stringify(origin)};document.querySelector('#code').value=${JSON.stringify(failedGrant.code)};document.querySelector('#authorize').checked=true;document.querySelector('#pair').requestSubmit();true`);
+      let status='';
+      for(let n=0;n<60;n++){status=await evaluate(popup.targetId,"document.querySelector('#status').textContent");if(status.includes('companion identity changed'))break;await new Promise(done=>setTimeout(done,100));}
+      assert.match(status,/Create a fresh Connect code in Hermo/,'restricted mismatch gives an actionable recovery path');
+      assert.equal(await evaluate(popup.targetId,"document.querySelector('#code').value"),'','a consumed mismatched code must not be resubmitted');
+      assert.equal(await evaluate(popup.targetId,"document.querySelector('#open-hermo-reconnect').hidden"),false,'popup provides a direct route to owner recovery');
+      await setup.locator('.normal-chrome-grant').waitFor({state:'hidden'});
+      const recovery=setup.locator('details').filter({has:ui.getByText('Reconnect after reinstalling the companion',{exact:true})});
+      assert.notEqual(await recovery.getAttribute('open'),null,'pairing failure automatically opens recovery');
+      assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).pairing_error.code,'WRONG_BROWSER');
+      assert.equal(await ui.getByRole('dialog').isVisible(),true,'failed replacement cannot falsely confirm the old live tab');
+      assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).linked,true,'mismatch cannot replace existing tab authorization');
+      assert.equal(store.unseal(store.db.prepare('SELECT payload FROM browser_workspaces WHERE id=?').get(browser.id).payload).context_id,originalContext);
+      const staleGrant=await ok(`/studio/connections/${c.id}/browser-link`,{authorized:true});
+      assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).pairing_error,undefined,'new code clears the previous attempt error');
+      assert.equal((await call(`/studio/browser-workspaces/${browser.id}/reset-context`,{authorized:true},{cookie:''})).status,401);
+      assert.equal((await call(`/studio/browser-workspaces/${browser.id}/reset-context`,{authorized:true},{'x-hermo-csrf':'bad'})).status,403);
+      assert.equal((await call(`/studio/browser-workspaces/${browser.id}/reset-context`,{authorized:false})).status,400);
+      const reset=setup.getByRole('button',{name:'Reset browser binding and create code',exact:true});
+      assert.equal(await reset.isDisabled(),true);
+      await setup.getByRole('checkbox',{name:/I authorize Hermo to read this website tab/}).uncheck();
+      await setup.getByRole('checkbox',{name:'I authorize reconnecting this saved browser and stopping its existing website connections.',exact:true}).check();
+      assert.equal(await reset.isDisabled(),true,'tab authorization is also required');
+      await setup.getByRole('checkbox',{name:/I authorize Hermo to read this website tab/}).check();
+      await setup.getByRole('button',{name:'Create Connect code',exact:true}).click();
+      assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).linked,true,'creating recovery code leaves the old tab intact until replacement succeeds');
+      const newCode=await setup.locator('.normal-chrome-grant input').inputValue();assert.notEqual(newCode,staleGrant.code);
+      const pairBody=code=>({code,origin,authorized:true,protocol:2,capabilities:['panel','read_data','saved_browser','command_guard'],tab_id:2,context_id:replacementContext});
+      assert.equal((await call('/companion/browser/pair',pairBody(staleGrant.code),extensionHeaders)).value.error.code,'BROWSER_LINK_EXPIRED','reset revokes older outstanding codes');
+      await site.bringToFront();await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:target.targetId});
+      for(let n=0;n<60;n++){
+        popup=(await cdp.send('Target.getTargets')).targetInfos.find(x=>x.url.endsWith('/popup.html'));
+        if(popup&&await evaluate(popup.targetId,"document.documentElement.dataset.hermoReady==='true'").catch(()=>false))break;
+        await new Promise(done=>setTimeout(done,100));
+      }
+      await evaluate(popup.targetId,`document.querySelector('#workspace').value=${JSON.stringify(origin)};document.querySelector('#code').value=${JSON.stringify(newCode)};document.querySelector('#authorize').checked=true;document.querySelector('#pair').requestSubmit();true`);
+      // Owner-side confirmation opens the website and naturally closes Chrome's
+      // transient action popup. Observe the durable connection, then reopen the
+      // real popup and verify its connected view rather than a destroyed target.
+      for(let n=0;n<70;n++){if((await ok(`/studio/connections/${c.id}/browser-link`)).confirmed)break;await new Promise(done=>setTimeout(done,100));}
+      assert.equal((await ok(`/studio/connections/${c.id}/browser-link`)).confirmed,true);
+      await setup.locator('.normal-chrome-grant').waitFor({state:'hidden'});
+      await site.bringToFront();await cdp.send('Extensions.triggerAction',{id:extensionId,targetId:target.targetId});
+      let connectedView;
+      for(let n=0;n<60;n++){
+        popup=(await cdp.send('Target.getTargets')).targetInfos.find(x=>x.url.endsWith('/popup.html'));
+        connectedView=popup&&await evaluate(popup.targetId,"document.documentElement.dataset.hermoReady==='true'&&document.body.dataset.connection==='connected'&&!document.querySelector('#connected-state').hidden&&document.querySelector('#pair').hidden").catch(()=>false);
+        if(connectedView)break;await new Promise(done=>setTimeout(done,100));
+      }
+      assert.equal(connectedView,true,'reopened actual popup shows the recovered connected tab');
+      assert.equal(await evaluate(popup.targetId,"document.querySelector('#connection-name').textContent"),'Weather');
+      assert.equal(await evaluate(popup.targetId,"document.querySelector('#connection-label').textContent"),'Connected');
+      assert.equal(await evaluate(popup.targetId,"document.querySelector('#code').value"),'','successful pairing clears its one-use code');
+      assert.equal(store.unseal(store.db.prepare('SELECT payload FROM browser_workspaces WHERE id=?').get(browser.id).payload).context_id,replacementContext);
+      assert.equal(store.db.prepare('SELECT revoked_at FROM api_keys WHERE id=?').get(key.id).revoked_at,null);
+      assert.deepEqual(store.db.prepare('SELECT payload,version,status,test_version FROM workflows WHERE id=?').get(wf.id),savedDefinition);
+      const run=await finish((await ok('/v1/actions/weather.read/versions/1/runs',{input:{}},{...headers,'idempotency-key':'after-companion-reinstall'})).run_id);
+      assert.equal(run.status,'succeeded',JSON.stringify(run));assert.deepEqual(run.result,{location:'Colombo',temperature:'28 °C'});
+      assert.equal((await call('/companion/browser/pair',pairBody(newCode),extensionHeaders)).value.error.code,'BROWSER_LINK_EXPIRED','recovery code is still one-use');
+      await ui.screenshot({path:join(directory,'companion-reconnected.png'),fullPage:true});
     });
     assert.deepEqual(errors,[]);await ui.close();
   }finally{await context?.close();await app.close();}

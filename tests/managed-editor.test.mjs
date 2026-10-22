@@ -14,7 +14,8 @@ test('managed local APIs execute repaired semantic steps and explicit waits afte
   await app.listen({host:'127.0.0.1',port:4428});
   let cookie='',csrf='';
   const call=async(path,body,headers={})=>{const response=await app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:'127.0.0.1:4428',cookie,...body===undefined?{}:{'x-hermo-csrf':csrf},...headers},...body===undefined?{}:{payload:body}});if(response.headers['set-cookie'])cookie=response.headers['set-cookie'].split(';')[0];return {status:response.statusCode,value:response.json()};};
-  const ok=async(...args)=>{const value=await call(...args);assert.ok(value.status<300,JSON.stringify(value));return value.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(...args)=>{if(args[1]!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(args[0])){const review=await ok(args[0].replace(/\/publish$/,'/permissions'));args[1]={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...args[1]};}const value=await call(...args);assert.ok(value.status<300,JSON.stringify(value));return value.value;};
   const finish=async rid=>{for(let n=0;n<200;n++){const run=await ok('/studio/runs/'+rid);if(['succeeded','failed','cancelled'].includes(run.status))return run;await new Promise(done=>setTimeout(done,100));}assert.fail('Run did not finish');};
   try{
     csrf=(await ok('/studio/session')).csrf;csrf=(await ok('/studio/setup',{password:'synthetic-managed-fixture-owner'})).csrf;
@@ -68,13 +69,13 @@ test('managed local APIs execute repaired semantic steps and explicit waits afte
 test('dedicated managed sessions rotate securely and survive runtime restart',{timeout:60000},async()=>{
   process.env.HERMO_MASTER_KEY=randomBytes(32).toString('base64');
   const dataDir=resolve('work/managed-session',randomBytes(6).toString('hex')),port=4429;
-  let state,csrf='',cookie='';
+  let state,csrf='',cookie='',sessionExpired=false;
   async function start(){
     state=await createApp({port,dataDir});
-    state.app.get('/sandbox/managed-private',async(req,reply)=>{if(!['initial','rotated'].includes(req.cookies.managed_session))return reply.type('text/html').send('<input type="password" aria-label="Sign in">');return reply.setCookie('managed_session','rotated',{path:'/sandbox/',httpOnly:true,sameSite:'lax'}).type('text/html').send('<span id="account">Fixture owner</span><output id="value">42</output>');});
+    state.app.get('/sandbox/managed-private',async(req,reply)=>{if(sessionExpired||!['initial','rotated'].includes(req.cookies.managed_session))return reply.type('text/html').send('<input type="password" aria-label="Sign in">');return reply.setCookie('managed_session','rotated',{path:'/sandbox/',httpOnly:true,sameSite:'lax'}).type('text/html').send('<span id="account">Fixture owner</span><output id="value">42</output>');});
     await state.app.listen({host:'127.0.0.1',port});
   }
-  const call=async(path,body,headers={})=>{const response=await state.app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:`127.0.0.1:${port}`,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf},...headers},...body===undefined?{}:{payload:body}});if(response.headers['set-cookie'])cookie=response.headers['set-cookie'].split(';')[0];assert.ok(response.statusCode<300,response.body);return response.json();};
+  const call=async(path,body,headers={})=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await call(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}const response=await state.app.inject({method:body===undefined?'GET':'POST',url:path,headers:{host:`127.0.0.1:${port}`,cookie,...body===undefined?{}:{'x-hermo-csrf':csrf},...headers},...body===undefined?{}:{payload:body}});if(response.headers['set-cookie'])cookie=response.headers['set-cookie'].split(';')[0];assert.ok(response.statusCode<300,response.body);return response.json();};
   const finish=async rid=>{for(let n=0;n<200;n++){const run=await call('/studio/runs/'+rid);if(['succeeded','failed'].includes(run.status))return run;await new Promise(done=>setTimeout(done,100));}assert.fail('Run did not finish');};
   try{
     await start();csrf=(await call('/studio/session')).csrf;csrf=(await call('/studio/setup',{password:'synthetic-managed-private-owner'})).csrf;
@@ -90,7 +91,7 @@ test('dedicated managed sessions rotate securely and survive runtime restart',{t
     await state.app.close();await start();cookie='';csrf=(await call('/studio/session')).csrf;csrf=(await call('/studio/login',{password:'synthetic-managed-private-owner'})).csrf;
     const restored=await finish((await call('/v1/actions/managed.private/versions/1/runs',{input:{}},{...auth,'idempotency-key':'after-restart'})).run_id);
     assert.equal(restored.status,'succeeded',JSON.stringify(restored));assert.deepEqual(restored.result,{value:42});assert.equal(JSON.stringify(restored).includes('managed_session'),false);
-    const stored=state.store.unseal(state.store.db.prepare('SELECT payload FROM connections WHERE id=?').get(cid).payload);stored.storageState={cookies:[],origins:[]};state.store.db.prepare('UPDATE connections SET payload=? WHERE id=?').run(state.store.seal(stored),cid);
+    sessionExpired=true;
     const expired=await finish((await call('/v1/actions/managed.private/versions/1/runs',{input:{}},{...auth,'idempotency-key':'expired-session'})).run_id);assert.equal(expired.status,'failed');assert.equal(expired.error.category,'AUTHENTICATION_REQUIRED');
   }finally{await state?.app.close();}
 });

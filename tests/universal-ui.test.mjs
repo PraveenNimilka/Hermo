@@ -72,7 +72,7 @@ test('universal production UI supports six task types, accessible layouts and re
     db.prepare('INSERT INTO api_keys VALUES (?,?,?,?,?,?,?,?)').run('key_seed','Synthetic dashboard client',hash(secret),'UI1234','wf_seed','2099-01-01T00:00:00.000Z',null,stamp);
     for(let index=0;index<17;index++){
       const when=new Date(Date.now()-index*60000).toISOString(),succeeded=index<12;
-      db.prepare('INSERT INTO runs VALUES (?,?,?,?,?,?,?,?,?)').run(`run_seed_${index}`,'wf_seed','key_seed',`seed_request_${index}`,hash('[]'),succeeded?'succeeded':'failed',seal({input:{},workflow_version:'seed-1',result:succeeded?{status:'Available'}:undefined,duration_ms:750}),when,when);
+      db.prepare('INSERT INTO runs VALUES (?,?,?,?,?,?,?,?,?)').run(`run_seed_${index}`,'wf_seed','key_seed',`seed_request_${index}`,hash('[]'),succeeded?'succeeded':'failed',seal({input:{},workflow_version:'seed-1',result:succeeded?{status:'Available'}:undefined,duration_ms:750,...index===0?{outcome:'verified',started_at:when,finished_at:when,steps:[],verification:{run_id:'run_seed_0',verifier_version:'seed-1',observed_at:when,verified_at:when,checks:['output_schema']}}:{}}),when,when);
     }
     await call('/studio/browser-workspaces',{name:'Saved test browser',kind:'current'});
     browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
@@ -87,13 +87,15 @@ test('universal production UI supports six task types, accessible layouts and re
     await t.test('six dashboard screens reflow with named controls and truthful metrics',async()=>{
       assert.equal(await page.locator('.bridge-strip').count(),1,'Website task to API transformation is visible');
       await page.locator('.metric strong').first().waitFor();
-      assert.deepEqual(await page.locator('.metric strong').allTextContents(),['1','1','12'],'Dashboard counts reflect seeded stored data');
+      assert.deepEqual(await page.locator('.metric strong').allTextContents(),['1','1','1'],'Only the correlated verified seed counts as a verified success');
+      const measured=await call('/studio/overview');assert.equal(measured.totals.verified,1);assert.equal(measured.totals.uncertain,11,'Historical successful rows without evidence remain uncertain');assert.equal(measured.totals.failed,5);
       for(const viewport of [{width:1440,height:1000},{width:768,height:1024},{width:375,height:812},{width:844,height:390}]){
         await page.setViewportSize(viewport);
         for(const name of screenNames){
           await page.getByRole('button',{name,exact:true}).click();await settle();
           await assertUsable(page,`${name} at ${viewport.width}x${viewport.height}`);
           await assertMonochrome(page,`${name} at ${viewport.width}`);
+          const activeNav=await page.locator('.sidebar nav').evaluate(nav=>{const active=nav.querySelector('[aria-current=page]').getBoundingClientRect(),bounds=nav.getBoundingClientRect();return active.left>=bounds.left-1&&active.right<=bounds.right+1;});assert.equal(activeNav,true,'active navigation stays visible after screen and viewport changes');
           if(name==='Privacy'){
             assert.equal(await page.getByText('Connect your ChatGPT plan',{exact:true}).count(),0);
             assert.equal(await page.getByText('Optional: provider-specific AI API connector',{exact:true}).count(),0);
@@ -107,6 +109,9 @@ test('universal production UI supports six task types, accessible layouts and re
     await t.test('mixed-length action cards keep metadata separated and footers aligned',async()=>{
       await page.setViewportSize({width:1440,height:1000});await page.getByRole('button',{name:'Actions',exact:true}).click();await settle();
       const cards=page.locator('.action-card');assert.equal(await cards.count(),3);
+      assert.equal(await page.locator('.page-heading-actions').getByRole('button',{name:'Use a workflow template',exact:true}).count(),1,'templates share the page toolbar');
+      const controls=await cards.evaluateAll(items=>items.flatMap(card=>[...card.querySelectorAll('.action-card-tools button')].map(button=>{const style=getComputedStyle(button),box=button.getBoundingClientRect();return {height:box.height,radius:style.borderRadius,display:style.display,inside:box.right<=card.getBoundingClientRect().right};})));
+      for(const control of controls){assert.ok(control.height>=40,'all card tools use the shared control height');assert.equal(control.radius,'8px','all card tools use the shared radius');assert.match(control.display,/^(inline-)?flex$/,'icons and labels use a flex row');assert.equal(control.inside,true,'tools stay inside the card');}
       const geometry=await cards.evaluateAll(items=>items.map(card=>{const box=card.getBoundingClientRect(),footer=card.querySelector('.card-actions').getBoundingClientRect(),context=card.querySelector('.action-context'),label=context.querySelector('p').getBoundingClientRect(),badge=context.querySelector('.action-family').getBoundingClientRect();return {left:box.left,top:box.top,height:box.height,footerTop:footer.top,footerLeft:footer.left,contentLeft:card.querySelector('h3').getBoundingClientRect().left,gap:Math.abs(label.top-badge.top)<10?badge.left-label.right:badge.top-label.bottom};}));
       for(const item of geometry){assert.ok(item.gap>=7,'Connection label and task badge have a visible gap');assert.ok(Math.abs(item.footerLeft-item.contentLeft)<1,'Card content uses one shared left edge');}
       for(let index=0;index<geometry.length;index++)for(let other=index+1;other<geometry.length;other++)if(Math.abs(geometry[index].top-geometry[other].top)<1)assert.ok(Math.abs(geometry[index].footerTop-geometry[other].footerTop)<1,'Buttons align across a row with different title lengths');
@@ -202,6 +207,7 @@ test('universal production UI supports six task types, accessible layouts and re
       await page.getByRole('button',{name:'Run verification',exact:true}).click();
       const publish=page.getByRole('button',{name:'Publish API',exact:true});
       await publish.waitFor();
+      await dialog.getByRole('checkbox',{name:'I reviewed this workflow’s permissions and possible website effects.'}).check();
       for(let attempt=0;attempt<100&&await publish.isDisabled();attempt++)await page.waitForTimeout(150);
       assert.equal(await publish.isEnabled(),true,'Actual browser replay and captured-result checks pass');
       const run=db.prepare('SELECT * FROM runs WHERE workflow_id=? ORDER BY created_at DESC LIMIT 1').get(createdWorkflow);

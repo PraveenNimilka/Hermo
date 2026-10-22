@@ -16,7 +16,8 @@ test('end-to-end recording, publishing, REST/MCP, privacy and hostile requests',
     const set=response.headers.get('set-cookie');if(set?.startsWith(`hermo_owner_${port}=`))cookie=set.split(';')[0];
     const value=await response.json();return {status:response.status,value,headers:response.headers};
   };
-  const ok=async(path,body,extra)=>{const response=await call(path,body,extra);assert.ok(response.status<300,`${path}: ${response.status} ${JSON.stringify(response.value)}`);return response.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(path,body,extra)=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await ok(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}const response=await call(path,body,extra);assert.ok(response.status<300,`${path}: ${response.status} ${JSON.stringify(response.value)}`);return response.value;};
   const finish=async(rid)=>{for(let i=0;i<100;i++){const run=await ok('/studio/runs/'+rid);if(['succeeded','failed','cancelled'].includes(run.status))return run;await new Promise(r=>setTimeout(r,200));}throw new Error('Run did not finish');};
   const raw=(path,headers={})=>new Promise((resolve,reject)=>{http.get({hostname:'127.0.0.1',port,path,headers},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));}).on('error',reject);});
   const snapshot=()=>ok(`/studio/connections/${connection.id}/browser`);

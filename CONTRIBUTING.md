@@ -32,6 +32,9 @@ Verify both desktop and narrow layouts, including successful and failed requests
 
 ## Repository conventions
 
+Use short, descriptive branch names such as `workflow-safety` or
+`fix-tab-reconnect`. Name files and modules for their product responsibility.
+
 Keep root documentation limited to the README, contribution, security, license
 and third-party notices. Put maintained operating guides in `docs/`. Keep
 temporary plans, reports, captures and local configuration under ignored `work/`.

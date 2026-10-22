@@ -36,7 +36,7 @@ export function makeClient({ key, endpoint, transport, pollMs = 1200, timeoutMs 
   const path = actionPath(endpoint);
   const request = async (route, method = 'GET', body, idempotency) => {
     const response = await transport({ path: route, method, body, key, idempotency });
-    if (response?.error) throw new HermoError(response.error.code ?? 'REQUEST_FAILED', response.error.message ?? 'The Hermo request failed.', response.error);
+    if (response?.error && !(typeof response.id === 'string' && terminal(response))) throw new HermoError(response.error.code ?? 'REQUEST_FAILED', response.error.message ?? 'The Hermo request failed.', response.error);
     return response;
   };
   const wait = async (id, { signal, onStatus = () => {}, read = () => request('/v1/runs/' + encodeURIComponent(id)) } = {}) => {

@@ -11,7 +11,7 @@ import {renderPanel} from '../companion/browser/panel.mjs';
 // fixture checks interface states, not external-site workflow compatibility.
 test('companion branding, popup permission form, and manual pages remain usable in Chrome', {timeout: 60000}, async () => {
   const server = createServer((_, reply) => {
-    reply.writeHead(200, {'content-type': 'text/html'});
+    reply.writeHead(200, {'content-type': 'text/html','content-security-policy':"default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'"});
     reply.end('<!doctype html><title>Companion interface test</title><main><h1>Local interface fixture</h1></main>');
   });
   await new Promise(done => server.listen(0, '127.0.0.1', done));
@@ -79,7 +79,10 @@ test('companion branding, popup permission form, and manual pages remain usable 
     assert.equal(layout.codeType, 'password');
     assert.equal(layout.previewDisabled, true); assert.equal(layout.hiddenPreviewStop, true);
     assert.equal(layout.primaryColor, 'rgb(32, 32, 32)'); assert.equal(layout.liveRegion, 'status');
-    await evaluate(popup.targetId, "document.querySelector('#code').focus();true");
+    assert.deepEqual(await evaluate(popup.targetId,"({radius:getComputedStyle(document.querySelector('main')).borderRadius,padding:getComputedStyle(document.body).padding,left:document.querySelector('main').getBoundingClientRect().left,width:document.body.getBoundingClientRect().width})"),{radius:'0px',padding:'0px',left:0,width:400},'popup has a square, edge-to-edge outer surface');
+    await request(popup.targetId,'Input.dispatchMouseEvent',{type:'mousePressed',x:layout.code.x+20,y:layout.code.y+20,button:'left',clickCount:1});
+    await request(popup.targetId,'Input.dispatchMouseEvent',{type:'mouseReleased',x:layout.code.x+20,y:layout.code.y+20,button:'left',clickCount:1});
+    assert.equal(await evaluate(popup.targetId,"getComputedStyle(document.querySelector('#code')).outlineStyle"),'none','pointer focus does not highlight editable fields');
     const key = async (name, code, windowsVirtualKeyCode) => {
       await request(popup.targetId, 'Input.dispatchKeyEvent', {type:'keyDown', key:name, code, windowsVirtualKeyCode, ...name==='Enter'?{text:'\r'}:{}});
       await request(popup.targetId, 'Input.dispatchKeyEvent', {type:'keyUp', key:name, code, windowsVirtualKeyCode});
@@ -126,9 +129,14 @@ test('companion branding, popup permission form, and manual pages remain usable 
     const manifest = JSON.parse(await readFile('companion/browser/manifest.json', 'utf8'));
     assert.deepEqual(manifest.host_permissions, ['http://127.0.0.1/*']);
     assert.equal(manifest.icons['128'], 'hermo-crab.png');
+    assert.deepEqual(manifest.web_accessible_resources,[{resources:['hermo-crab.png'],matches:['http://*/*','https://*/*'],use_dynamic_url:true}],'only the public logo is exposed to website tabs');
     const targets = (await cdp.send('Target.getTargets')).targetInfos;
     assert.equal(targets.some(target => target.url.endsWith('/preview-offscreen.html')), false, 'opening the UI never authorizes screen capture');
-    await site.evaluate(renderPanel, {state:'ready',name:'Local interface fixture',controller:'ui-test',generation:1});
+    const worker=(await cdp.send('Target.getTargets')).targetInfos.find(target=>target.type==='service_worker'&&target.url.endsWith('/background.mjs'));
+    const logoURL=await evaluate(worker.targetId,"chrome.runtime.getURL('hermo-crab.png')");
+    await site.evaluate(renderPanel, {state:'ready',name:'Local interface fixture',controller:'ui-test',generation:1,logoURL});
+    await site.waitForFunction(()=>{const image=document.querySelector('#hermo-connection-panel').__hermoView.root.querySelector('.creature img');return image.complete&&image.naturalWidth>0;});
+    assert.equal(await site.evaluate(()=>document.querySelector('#hermo-connection-panel').__hermoView.root.querySelector('.creature img').src.endsWith('/hermo-crab.png')),true,'the original logo loads even on a restrictive website');
     const panel = () => site.evaluate(() => {
       const root = document.querySelector('#hermo-connection-panel').__hermoView.root;
       return {expanded:root.querySelector('.collapse').getAttribute('aria-expanded'),hidden:root.querySelector('.body').hidden};
@@ -138,6 +146,22 @@ test('companion branding, popup permission form, and manual pages remain usable 
     assert.deepEqual(await panel(), {expanded:'false',hidden:true});
     await site.evaluate(() => document.querySelector('#hermo-connection-panel').__hermoView.root.querySelector('.collapse').click());
     assert.deepEqual(await panel(), {expanded:'true',hidden:false});
+    await site.screenshot({path:resolve(evidence,'panel-connected.png'),animations:'disabled'});
+    await site.evaluate(renderPanel,{state:'running',name:'A very long website connection name that should wrap without pushing the Stop control off the companion panel',controller:'ui-test',generation:2});
+    const bounds=await site.evaluate(()=>{const root=document.querySelector('#hermo-connection-panel').__hermoView.root,section=root.querySelector('section').getBoundingClientRect(),stop=root.querySelector('.stop').getBoundingClientRect();return {width:section.width,right:section.right,stopRight:stop.right,viewport:innerWidth};});
+    assert.ok(bounds.right<=bounds.viewport&&bounds.stopRight<=bounds.right,'long connection names keep controls inside the panel');
+    await site.screenshot({path:resolve(evidence,'panel-working.png'),animations:'disabled'});
+    await site.emulateMedia({reducedMotion:'reduce'});
+    assert.equal(await site.evaluate(()=>getComputedStyle(document.querySelector('#hermo-connection-panel').__hermoView.root.querySelector('.creature')).animationName),'none','the companion respects reduced motion');
+    await site.evaluate(renderPanel,{state:'stopped',name:'Local interface fixture',controller:'ui-test',generation:4});
+    assert.equal(await site.evaluate(renderPanel,{state:'ready',name:'Stale refresh',controller:'old',generation:3}),false,'older updates cannot make a stopped companion look connected');
+    assert.equal(await site.evaluate(()=>document.querySelector('#hermo-connection-panel').__hermoView.root.querySelector('.stop').disabled),true);
+    await site.screenshot({path:resolve(evidence,'panel-stopped.png'),animations:'disabled'});
+    await site.setViewportSize({width:320,height:640});
+    await site.evaluate(renderPanel,{state:'offline',name:'<img src=x onerror=alert(1)>',controller:'ui-test',generation:5});
+    assert.equal(await site.evaluate(()=>{const root=document.querySelector('#hermo-connection-panel').__hermoView.root;return root.querySelector('small').children.length;}),0,'connection names are text, never injected markup');
+    assert.equal(await site.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'the panel fits a narrow page');
+    await site.screenshot({path:resolve(evidence,'panel-reconnect-mobile.png'),animations:'disabled'});
   } finally {
     await context?.close(); await new Promise(done => server.close(done));
   }

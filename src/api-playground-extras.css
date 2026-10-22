@@ -1,0 +1,6 @@
+.api-playground .api-input-mode,.api-playground .api-share-examples{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
+.api-playground .api-input-mode [aria-pressed="true"]{background:var(--text,#222);color:var(--surface,#fff)}
+.api-playground .api-json-editor textarea{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;min-height:240px;resize:vertical;line-height:1.6;max-width:100%;tab-size:2}
+.api-playground .api-playground-examples p{overflow-wrap:anywhere;max-width:75ch}
+.api-playground .api-share-examples .button{white-space:normal;text-align:center;min-height:40px}
+@media(max-width:520px){.api-playground .api-share-examples .button{flex:1 1 140px}.api-playground .api-input-mode .button{flex:1}}

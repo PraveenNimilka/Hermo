@@ -36,7 +36,8 @@ test('managed Chromium crash, missing output, cancellation and timeout fail clos
         .type('text/html').send(`<!doctype html><html><head><title>Managed fault fixture</title></head><body><main><h1>Local catalog</h1>${output}<div id="ready"${delayed||stalled?' hidden':''}>Ready</div></main>${delayed?'<script>setTimeout(()=>document.querySelector("#ready").hidden=false,250)</script>':''}</body></html>`);
     });
     await app.listen({host:'127.0.0.1',port});
-    const call=async(path,body,headers={})=>{
+    // This fixture owner explicitly reviews and authorizes configured publication changes.
+    const call=async(path,body,headers={})=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await call(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}
       const response=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{...cookie?{cookie}:{},...body===undefined?{}:{'content-type':'application/json','x-hermo-csrf':csrf},...headers},...body===undefined?{}:{body:JSON.stringify(body)}});
       const owner=response.headers.get('set-cookie');if(owner?.startsWith(`hermo_owner_${port}=`))cookie=owner.split(';')[0];
       const value=await response.json();assert.ok(response.ok,`${path}: ${response.status} ${JSON.stringify(value)}`);return value;

@@ -11,7 +11,8 @@ test('modern browser compatibility and permission boundaries',{timeout:180000},a
   installCompatibilityFixture(app);await app.listen({port:4331,host:'127.0.0.1'});
   let cookie='',csrf='',connection,workflow,key;
   const call=async(path,body,extra={})=>{const r=await fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{Cookie:cookie,...body===undefined?{}:{'Content-Type':'application/json','X-Hermo-CSRF':csrf},...extra},body:body===undefined?undefined:JSON.stringify(body)});if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return {status:r.status,value:await r.json()};};
-  const ok=async(path,body)=>{const r=await call(path,body);assert.ok(r.status<300,JSON.stringify({path,...r}));return r.value;};
+  // This fixture owner explicitly reviews and authorizes configured publication changes.
+  const ok=async(path,body)=>{if(body!==undefined&&/^\/studio\/workflows\/[^/]+\/publish$/.test(path)){const review=await ok(path.replace(/\/publish$/,'/permissions'));body={expected_version:review.version,permission_fingerprint:review.fingerprint,...(review.changes?.breaking?{change_fingerprint:review.changes.fingerprint,accept_breaking:true}:{}),...body};}const r=await call(path,body);assert.ok(r.status<300,JSON.stringify({path,...r}));return r.value;};
   const snap=()=>ok(`/studio/connections/${connection.id}/browser`);
   const interact=body=>ok(`/studio/connections/${connection.id}/interact`,body);
   const control=(element,kind,value,recording,parameter)=>ok(`/studio/connections/${connection.id}/control`,{element_id:element.id,kind,...value===undefined?{}:{value},...recording?{recording_id:recording}:{},...parameter?{parameter}:{}});

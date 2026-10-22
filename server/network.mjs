@@ -37,12 +37,18 @@ export async function connectPublic(hostname,{resolve=publicAddresses,dial=net.c
   });}catch(e){last=e;}}
   throw last??new Error('CONNECTION_FAILED');
 }
-export async function createEgressProxy(sandboxOrigin) {
-  const policies=new Map(), diagnostics=new Map(),sockets=new Set();
+export async function createEgressProxy(sandboxOrigin,{connect=connectPublic}={}) {
+  const policies=new Map(), diagnostics=new Map(),sockets=new Set(),ownedSockets=new Map();
+  function own(token,socket,origin){
+    const owned=ownedSockets.get(token);
+    if(!owned||!policies.get(token)?.has(origin)){socket.destroy();return false;}
+    if(owned.has(socket)){owned.set(socket,origin);return true;}
+    owned.set(socket,origin);socket.once('close',()=>owned.delete(socket));return true;
+  }
   function note(token,url,reason){if(!token||!diagnostics.has(token))return;try{const origin=new URL(url).origin,map=diagnostics.get(token);if(map.size<40)map.set(origin+'|'+reason,{origin,reason,resource:'connection',count:1});}catch{}}
   const register=(origins)=>{
-    const token=randomBytes(32).toString('base64url'); policies.set(token,new Set(origins));diagnostics.set(token,new Map());
-    return {username:token,password:token,diagnostics:()=>[...(diagnostics.get(token)?.values()??[])],clearDiagnostics:()=>diagnostics.get(token)?.clear(),setOrigins(origins){if(!policies.has(token))throw new Error('PROXY_CLOSED');policies.set(token,new Set(origins));},release:()=>{policies.delete(token);diagnostics.delete(token);}};
+    const token=randomBytes(32).toString('base64url'); policies.set(token,new Set(origins));diagnostics.set(token,new Map());ownedSockets.set(token,new Map());
+    return {username:token,password:token,diagnostics:()=>[...(diagnostics.get(token)?.values()??[])],clearDiagnostics:()=>diagnostics.get(token)?.clear(),setOrigins(origins){if(!policies.has(token))throw new Error('PROXY_CLOSED');const allowed=new Set(origins);policies.set(token,allowed);for(const [socket,origin]of ownedSockets.get(token))if(!allowed.has(origin))socket.destroy();},release:()=>{policies.delete(token);diagnostics.delete(token);const owned=ownedSockets.get(token);ownedSockets.delete(token);for(const socket of owned?.keys()??[])socket.destroy();}};
   };
   function policy(req) {
     const raw=req.headers['proxy-authorization'];
@@ -54,11 +60,13 @@ export async function createEgressProxy(sandboxOrigin) {
   const server=http.createServer(async(req,res)=>{
     if(!req.headers['proxy-authorization']){res.writeHead(407,{'Proxy-Authenticate':'Basic realm="Hermo runner"'});res.end();return;}
     try {
-      const {allowed}=policy(req), url=new URL(req.url);
+      const {allowed,token}=policy(req), url=new URL(req.url);
       if(url.origin!==sandboxOrigin||!url.pathname.startsWith('/sandbox/')||!allowed.has(sandboxOrigin)||url.username||url.password) throw new Error('Blocked');
+      if(!own(token,req.socket,url.origin))return;
       const headers={...req.headers,host:url.host};
       delete headers['proxy-authorization']; delete headers['proxy-connection'];
-      const upstream=http.request({hostname:'127.0.0.1',port:Number(url.port),path:url.pathname+url.search,method:req.method,headers},response=>{response.on('error',()=>res.destroy());res.writeHead(response.statusCode,response.headers);response.pipe(res);});
+      const upstream=http.request({hostname:'127.0.0.1',port:Number(url.port),path:url.pathname+url.search,method:req.method,headers,agent:false},response=>{response.on('error',()=>res.destroy());res.writeHead(response.statusCode,response.headers);response.pipe(res);});
+      upstream.once('socket',socket=>own(token,socket,url.origin));
       upstream.on('error',()=>{if(!res.headersSent)res.writeHead(502);res.end();});req.on('error',()=>upstream.destroy());req.on('aborted',()=>upstream.destroy());res.on('close',()=>upstream.destroy());req.pipe(upstream);
     } catch {res.writeHead(403);res.end('Network policy blocked this request.');}
   });
@@ -69,8 +77,11 @@ export async function createEgressProxy(sandboxOrigin) {
       const authenticated=policy(req),allowed=authenticated.allowed;token=authenticated.token;url=new URL(`https://${req.url}`);
       if(url.port&&url.port!=='443'||url.username||url.password||net.isIP(url.hostname)) {note(token,url,'PRIVATE_ROUTE_BLOCKED');throw new Error('Blocked');}
       if(!allowed.has(url.origin)){note(token,url,'ORIGIN_NOT_APPROVED');throw new Error('Blocked');}
-      let upstream;try{upstream=await connectPublic(url.hostname);}catch(e){note(token,url,e.message.includes('Private')?'PRIVATE_ROUTE_BLOCKED':'CONNECTION_FAILED');throw e;}
-      if(client.destroyed){upstream.destroy();return;}
+      if(!own(token,client,url.origin))return;
+      let upstream;try{upstream=await connect(url.hostname);}catch(e){note(token,url,e.message.includes('Private')?'PRIVATE_ROUTE_BLOCKED':'CONNECTION_FAILED');throw e;}
+      // DNS/dial can complete after release or a scope reduction. Recheck the
+      // current grant before exposing a tunnel, then bind both socket ends to it.
+      if(client.destroyed||!own(token,upstream,url.origin)){upstream.destroy();return;}
       sockets.add(upstream);upstream.on('close',()=>sockets.delete(upstream));
       upstream.setTimeout(60000,()=>upstream.destroy());
       upstream.on('error',()=>client.destroy());client.on('error',()=>upstream.destroy());client.on('close',()=>upstream.destroy());

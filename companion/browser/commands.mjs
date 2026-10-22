@@ -2,6 +2,9 @@ import {extractOutputDocument} from './output-extraction.mjs';
 import {readLegacyChatDocument} from './chat-messages.mjs';
 import {readAccountIdentityDocument} from './account-identity.mjs';
 import {diagnoseChatDocument} from './chat-diagnostics.mjs';
+import {captureMediaDocument} from './media-capture.mjs';
+import {previewDocument,scrollDocument} from './preview-interaction.mjs';
+import {locatorProbeDocument} from './locator-probe.mjs';
 // Serialized into Chrome's isolated extension world; no eval or remote code.
 export function operateDocument(command){
   try{
@@ -46,6 +49,10 @@ export function operateDocument(command){
     throw Error('ACTION_UNAVAILABLE');
   }
   if(!candidates.length)throw Error('ACTION_UNAVAILABLE');const target=latest?candidates.at(-1):candidates[0];
+  if(['ready','operate'].includes(command.op)){
+    const semantics=(command.locators??[]).filter(locator=>['role','label'].includes(locator.kind));
+    if(semantics.length&&!semantics.some(locator=>locator.kind==='role'?role(target)===locator.role&&name(target)===normalize(locator.name):normalize(explicitName(target))===normalize(locator.value)))throw Error('ELEMENT_CHANGED');
+  }
   if(!visible(target)||target.disabled||target.getAttribute('aria-disabled')==='true'||target.matches('input[type=password],input[autocomplete=one-time-code],input[type=file]'))throw Error('ACTION_UNAVAILABLE');
   if(command.op==='ready')return true;
   if(command.op==='read'){
@@ -53,6 +60,21 @@ export function operateDocument(command){
     const text=(latest?content(target).replace(/\n{3,}/g,'\n\n'):target.innerText??target.textContent??'').trim();if(text.length>4096)throw Error('ACTION_UNAVAILABLE');const identity=(()=>{const el=target;const key=Symbol.for('hermo.output.observations.v1'),registry=globalThis[key]??(globalThis[key]={nodes:new WeakMap(),next:0,document:crypto.randomUUID()});let id=registry.nodes.get(el);if(!id){id=++registry.next;registry.nodes.set(el,id);}return registry.document+':'+id;})();return command.details?{text,count:candidates.length,identity,streaming:[...document.querySelectorAll('button,[role=button]')].some(el=>!el.closest('[data-hermo-ui]')&&visible(el)&&/^stop$|stop (generating|streaming|response|generation)/i.test(el.getAttribute('aria-label')??el.textContent??''))||target.closest('[data-is-streaming="true"],[aria-busy="true"],[data-is-generating="true"]')!==null}:text;
   }
   if(command.expires_at!==undefined&&Date.now()>=command.expires_at)throw Error('TIMEOUT');
+  if(command.preview_guard){
+    const frame=globalThis[Symbol.for('hermo.preview.targets.v1')]?.get(command.preview_guard.frame_id),selected=frame?.targets.find(item=>item.id===command.preview_guard.target_id);
+    const b=target.getBoundingClientRect(),hit=document.elementFromPoint(command.preview_guard.x*innerWidth,command.preview_guard.y*innerHeight);
+    if(!frame||Date.now()-frame.at>5000||frame.view!==[location.href,innerWidth,innerHeight,scrollX,scrollY].join('|')||selected?.node!==target||selected.name!==(target.getAttribute('aria-label')??target.textContent?.slice(0,512)??'')||[b.x,b.y,b.width,b.height].some((value,index)=>Math.abs(value-selected.bounds[index])>2)||!(target===hit||target.contains(hit)))throw Error('ELEMENT_CHANGED');
+  }
+  if(command.completion_guard){
+    // Compare selected marker text in this same synchronous isolated-world
+    // operation, after readiness/authorization and immediately before input.
+    for(const guard of command.completion_guard){
+      const nodes=cssMatches(guard.selector).filter(visible);
+      if(nodes.length>1||nodes.some(node=>node.matches('input,textarea,select,[contenteditable]')))throw Error('COMPLETION_CHANGED');
+      const marker=nodes[0],observed=marker?(marker.innerText??marker.textContent??'').trim():null;
+      if(observed!==guard.expected||marker?.closest('[aria-busy="true"],[data-is-streaming="true"],[data-is-generating="true"]'))throw Error('COMPLETION_CHANGED');
+    }
+  }
   const value=command.value;
   if(command.kind==='fill'){
     if(target.isContentEditable){
@@ -68,7 +90,7 @@ export function operateDocument(command){
     if(!target.matches('button,a[href],[role=button],input[type=submit]'))throw Error('ACTION_UNAVAILABLE');
     if(target.href){const destination=new URL(target.href,location.href);if(destination.origin!==location.origin||!destination.pathname.startsWith(command.path_prefix))throw Error('ORIGIN_CHANGED');}target.click();
   }else throw Error('ACTION_UNAVAILABLE');return true;
-  }catch(error){return {hermo_error:['LOGIN_REQUIRED','ORIGIN_CHANGED','TIMEOUT','ELEMENT_AMBIGUOUS'].includes(error.message)?error.message:'ACTION_UNAVAILABLE'};}
+  }catch(error){return {hermo_error:['LOGIN_REQUIRED','ORIGIN_CHANGED','TIMEOUT','ELEMENT_AMBIGUOUS','ELEMENT_CHANGED','COMPLETION_CHANGED'].includes(error.message)?error.message:'ACTION_UNAVAILABLE'};}
 }
 
 export async function executeBrowserCommand({chrome,tabId,origin,pathPrefix='/',command,inspect,signal,deadline,beforeMutation,getVisualFrame}){
@@ -79,6 +101,10 @@ export async function executeBrowserCommand({chrome,tabId,origin,pathPrefix='/',
   let tab;try{tab=await chrome.tabs.get(tabId);}catch{throw Error('TAB_CLOSED');}if(!tab?.url)throw Error('PERMISSION_REVOKED');
   if(new URL(tab.url).origin!==origin||!new URL(tab.url).pathname.startsWith(pathPrefix))throw Error('ORIGIN_CHANGED');
   const script=async(func,args=[])=>{check();let results;try{results=await chrome.scripting.executeScript({target:{tabId},world:'ISOLATED',func,args});}catch(error){throw Error(/permission|cannot access|not allowed/i.test(error.message)?'PERMISSION_REVOKED':'PAGE_READ_FAILED');}check();if(results.length!==1||results[0].error||results[0].result===undefined)throw Error('PAGE_READ_FAILED');if(results[0].result?.hermo_error)throw Error(results[0].result.hermo_error);return results[0].result;};
+  if(command.op==='capture_media')return script(captureMediaDocument,[{...command,origin,path_prefix:pathPrefix}]);
+  if(command.op==='locator_probe'){
+    return script(locatorProbeDocument,[{...command.payload,require_ready:true,origin,path_prefix:pathPrefix,expires_at:deadline}]);
+  }
   if(command.op==='diagnose_chat'){
     const doc=await script(inspect,[{connected:true}]);if(command.public_source&&!doc.credentials)doc.login=false;if(doc.login||doc.credentials||doc.challenge||doc.authRejected||doc.denied||doc.networkError)throw Error('LOGIN_REQUIRED');
     return script(diagnoseChatDocument,[{...command,origin,path_prefix:pathPrefix}]);
@@ -87,7 +113,11 @@ export async function executeBrowserCommand({chrome,tabId,origin,pathPrefix='/',
   if(command.op==='navigate'){
     const url=new URL(command.url);if(url.origin!==origin||url.username||url.password||!url.pathname.startsWith(pathPrefix))throw Error('ORIGIN_CHANGED');await authorize();await chrome.tabs.update(tabId,{url:url.href});
   }else if(command.op==='reload'){await authorize();await chrome.tabs.reload(tabId);}
-  else if(command.op==='scroll'){await authorize();await script(delta=>{window.scrollBy(0,delta);return true;},[command.delta]);return true;}
+  else if(command.op==='scroll'){const doc=await script(inspect,[{connected:true}]);if(doc.credentials||doc.challenge||doc.authRejected||doc.denied||doc.networkError||doc.login&&!command.public_source)throw Error('LOGIN_REQUIRED');await authorize();await script(scrollDocument,[{delta:command.delta,...command.point}]);return true;}
+  else if(command.op==='preview_pick'){
+    const doc=await script(inspect,[{connected:true}]);if(doc.credentials||doc.challenge||doc.authRejected||doc.denied||doc.networkError||doc.login&&!command.public_source)throw Error('LOGIN_REQUIRED');
+    return script(previewDocument,[{...command,op:'pick',origin,path_prefix:pathPrefix}]);
+  }
   else if(command.op==='snapshot'){
     const doc=await script(inspect,[{connected:true}]);if(command.public_source&&!doc.credentials)doc.login=false;const safe=!doc.credentials&&!doc.login&&!doc.challenge&&!doc.authRejected&&!doc.denied&&!doc.networkError;
     if(safe&&!doc.elements.some(x=>x.read_mode==='last'&&x.semantic_role!=='media')){try{const messages=await script(readLegacyChatDocument,[{origin,path_prefix:pathPrefix}]);if(!Array.isArray(messages))throw Error('PAGE_READ_FAILED');doc.elements=[...doc.elements.filter(x=>x.kind!=='output'),...messages,...doc.elements.filter(x=>x.kind==='output')].slice(0,180);}catch(error){if(error.message!=='ACTION_UNAVAILABLE')throw error;}}
@@ -108,6 +138,10 @@ export async function executeBrowserCommand({chrome,tabId,origin,pathPrefix='/',
         }else if(frame?.state==='live')preview={state:'unavailable'};
       }catch{check();preview={state:'unavailable'};}
     }
+    if(image&&preview.state==='live'){
+      const interaction_id=await script(previewDocument,[{op:'register',origin,path_prefix:pathPrefix,captured_at:preview.captured_at,width:preview.width,height:preview.height,elements:doc.elements}]);
+      if(interaction_id)preview.interaction_id=interaction_id;
+    }
     check();
     const final=await chrome.tabs.get(tabId);if(new URL(final.url).origin!==origin||!new URL(final.url).pathname.startsWith(pathPrefix))throw Error('ORIGIN_CHANGED');
     if(final.url!==current.url){image='';preview={state:'unavailable'};}
@@ -121,6 +155,13 @@ export async function executeBrowserCommand({chrome,tabId,origin,pathPrefix='/',
     if(command.selector!==undefined&&!(command.op==='read'?typeof command.selector==='string'&&command.selector.length<=3000:css(command.selector))||command.locators!==undefined&&(!Array.isArray(command.locators)||!command.locators.length||command.locators.length>6||command.locators.some(locator=>!locator||!['testId','role','label','css'].includes(locator.kind)||(locator.kind==='css'?!css(locator.value):locator.kind==='role'?!text(locator.name)||typeof locator.role!=='string'||!/^[a-z]+$/.test(locator.role):!text(locator.value))))||command.op==='operate'&&!['fill','select','check','click'].includes(command.kind)||command.value!==undefined&&(typeof command.value!=='string'||command.value.length>4096)||command.timeout_ms!==undefined&&(!Number.isInteger(command.timeout_ms)||command.timeout_ms<100||command.timeout_ms>30000))throw Error('ACTION_UNAVAILABLE');
     const doc=await script(inspect,[{connected:true}]);if(command.public_source&&!doc.credentials)doc.login=false;if(doc.login||doc.credentials||doc.challenge||doc.authRejected||doc.denied||doc.networkError)throw Error('LOGIN_REQUIRED');
     if(command.op==='observe'){
+      if(command.kind==='navigation'){
+        if(!['domcontentloaded','load'].includes(command.state))throw Error('ACTION_UNAVAILABLE');
+        const actual=new URL((await chrome.tabs.get(tabId)).url);
+        if(command.url!==undefined){const target=new URL(command.url);if(target.origin!==origin||target.username||target.password||!target.pathname.startsWith(pathPrefix))throw Error('ORIGIN_CHANGED');if(actual.href!==target.href)return false;}
+        const state=await script(()=>document.readyState);
+        return command.state==='domcontentloaded'?state!=='loading':state==='complete';
+      }
       if(command.kind==='url'){
         const target=new URL(command.url),actual=new URL((await chrome.tabs.get(tabId)).url);
         if(target.origin!==origin||target.username||target.password||target.hash||!target.pathname.startsWith(pathPrefix)||actual.origin!==origin||!actual.pathname.startsWith(pathPrefix))throw Error('ORIGIN_CHANGED');
@@ -132,6 +173,7 @@ export async function executeBrowserCommand({chrome,tabId,origin,pathPrefix='/',
     }
     if(!command.selector&&!command.locators?.length)throw Error('ACTION_UNAVAILABLE');
     if(command.op==='operate'){
+      if(command.completion_guard!==undefined&&(!Array.isArray(command.completion_guard)||!command.completion_guard.length||command.completion_guard.length>8||command.completion_guard.some(guard=>!guard||!css(guard.selector)||guard.expected!==null&&(typeof guard.expected!=='string'||guard.expected.length>4096))))throw Error('ACTION_UNAVAILABLE');
       // Wait only before the action. Never retry a click after it has been issued.
       const readyDeadline=Math.min(deadline??Infinity,Date.now()+(command.timeout_ms??5000));
       while(true){check();try{await script(operateDocument,[{...command,op:'ready',origin,path_prefix:pathPrefix,expires_at:deadline}]);break;}catch(error){if(error.message!=='ACTION_UNAVAILABLE'||Date.now()>=readyDeadline)throw error;await pause(150);}}

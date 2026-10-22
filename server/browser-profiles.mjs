@@ -12,16 +12,17 @@ export function mergeProfileState(existing,profile){
   const key=c=>JSON.stringify([c.domain,c.path,c.name,c.partitionKey??null]);
   return {cookies:[...new Map([...(existing?.cookies??[]),...profile.cookies].map(c=>[key(c),c])).values()],origins:[...new Map([...(existing?.origins??[]),...profile.origins].map(o=>[o.origin,o])).values()]};
 }
-export function installBrowserProfiles(app,{store,engine,connection,recordings,fail,rate,saveConnection,invalidate}){
+export function installBrowserProfiles(app,{store,engine,connection,recordings,fail,rate,saveConnection,invalidate,assertConnectionIdle=()=>{},assertConnectionCurrent=()=>{}}){
   const profiles=()=>{const value=store.getSetting('google_browser_profiles');return value?store.unseal(value):[];};
   const metadata=p=>({id:p.id,name:p.name,connection_id:p.connection_id,saved_at:p.saved_at,source:p.source??'private_browser',origins:googleBrowserOrigins});
   const get=pid=>{const p=profiles().find(x=>x.id===pid);if(!p)fail('PROFILE_NOT_FOUND','This browser sign-in was removed. Save a new one.',404);return p;};
-  const inactive=cid=>{if([...recordings.values()].some(r=>r.connectionId===cid))fail('RECORDING_ACTIVE','Finish or discard the recording before changing browser sign-in.',409);};
+  const inactive=cid=>{assertConnectionIdle(cid);if([...recordings.values()].some(r=>r.connectionId===cid))fail('RECORDING_ACTIVE','Finish or discard the recording before changing browser sign-in.',409);};
   const apply=async(c,pid)=>{
     if(c.access==='public')fail('PUBLIC_PROFILE_BLOCKED','Public sources always use an anonymous browser.',400);
     const p=get(pid);inactive(c.id);
     const origins=[...new Set([...c.origins,...googleBrowserOrigins])];if(origins.length>32)fail('ORIGIN_LIMIT','Up to 32 exact origins are supported per connection.');
     try{for(const value of googleBrowserOrigins)await publicAddress(new URL(value).hostname);}catch{fail('INVALID_ORIGIN','A Google service could not be resolved to a public address. Retry after checking your network.');}
+    inactive(c.id);
     const previous=c.studioState?.storageState??c.storageState;
     saveConnection(c,{origins,browser_profile_id:p.id,studioState:{storageState:mergeProfileState(previous,p.storageState),checkpoint:c.url}},'auth_required');
     invalidate(c.id);await engine.close(c.id);store.audit('connection.browser_profile_applied',c.id);
@@ -40,6 +41,7 @@ export function installBrowserProfiles(app,{store,engine,connection,recordings,f
     if(Buffer.byteLength(JSON.stringify(storageState))>2*1024*1024)fail('PROFILE_TOO_LARGE','This browser session exceeds the private sign-in storage limit.',413);
     const all=profiles(),existing=all.find(p=>p.connection_id===c.id);if(!existing&&all.length>=5)fail('PROFILE_LIMIT','Remove a saved browser sign-in before creating another.',409);
     const p={id:existing?.id??id('profile'),name:b.name.trim(),connection_id:c.id,saved_at:new Date().toISOString(),storageState};
+    inactive(c.id);assertConnectionCurrent(c);
     store.setSetting('google_browser_profiles',store.seal([...all.filter(x=>x.id!==p.id),p]));
     // The draft browser session is separate from the confirmed API account.
     // Saving it never silently changes cookies used by a published action.
@@ -63,7 +65,7 @@ export function installBrowserProfiles(app,{store,engine,connection,recordings,f
     // Check all active recordings before making any changes.
     for(const c of affected)inactive(c.id);
     store.setSetting('google_browser_profiles',store.seal(profiles().filter(x=>x.id!==p.id)));
-    for(const c of affected){await engine.close(c.id);saveConnection(c,{studioState:undefined,storageState:undefined,identity:undefined,checkpoint:undefined,browser_profile_id:undefined},'auth_required');invalidate(c.id);}
+    for(const c of affected){await engine.close(c.id);saveConnection(connection(c.id),{studioState:undefined,storageState:undefined,identity:undefined,checkpoint:undefined,browser_profile_id:undefined,session_generation:id('session')},'auth_required');invalidate(c.id);}
     store.audit('browser_profile.revoked',p.id);return {ok:true,affected_connections:affected.length};
   });
   return {get,apply};
