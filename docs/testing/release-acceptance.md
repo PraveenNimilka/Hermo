@@ -113,7 +113,7 @@ to Scrape, httpbin form POST, and WebSocket.org secure echo. Evidence:
 The first hosted Windows checks exposed a publication-readiness race after an
 approved verification completed in the Runs dialog. Reopening the test dialog
 could retain a card's older unverified state. The dialog now refreshes the current
-server-side draft on opening and run transitions; run completion also refreshes
+server-side draft on opening and draft changes; run completion also refreshes
 the overview. A deterministic regression holds a stale card snapshot and delays
 the readiness response, confirming that publication stays disabled until fresh
 verification evidence arrives and permissions are acknowledged. No permission,
