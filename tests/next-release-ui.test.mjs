@@ -56,6 +56,17 @@ test('projects, revision history, editor and scoped-key playground work in deskt
       const overflow=await page.evaluate(()=>({document:document.documentElement.scrollWidth>innerWidth+1,dialog:[...document.querySelectorAll('[role=dialog]')].some(e=>e.scrollWidth>e.clientWidth+1)}));assert.deepEqual(overflow,{document:false,dialog:false},'editor overflow '+width);
       await page.screenshot({path:join(dataDir,`editor-${width}.png`)});
     }
+    // A fast verification can finish before the dialog's first status response.
+    // Return that real terminal response directly rather than relying on a poll.
+    await page.route('**/studio/runs/*',async route=>{
+      const deadline=Date.now()+20000;
+      while(Date.now()<deadline){
+        const response=await route.fetch(),run=await response.json();
+        if(['succeeded','failed','cancelled'].includes(run.status)){await route.fulfill({response});return;}
+        await new Promise(done=>setTimeout(done,50));
+      }
+      assert.fail('Verification did not finish before its first UI observation');
+    },{times:1});
     await page.setViewportSize({width:1440,height:1000});await dialog.getByRole('button',{name:'Run verification',exact:true}).click();await dialog.getByRole('button',{name:'Publish draft revision',exact:true}).waitFor();
     await dialog.getByRole('checkbox',{name:'I reviewed this workflow’s permissions and possible website effects.'}).check();
     const publication=dialog.getByRole('button',{name:'Publish draft revision',exact:true});
