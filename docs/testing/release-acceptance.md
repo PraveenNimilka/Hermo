@@ -110,6 +110,15 @@ to Scrape, httpbin form POST, and WebSocket.org secure echo. Evidence:
 
 ## Regression status
 
+The first hosted Windows checks exposed a publication-readiness race after an
+approved verification completed in the Runs dialog. Reopening the test dialog
+could retain a card's older unverified state. The dialog now refreshes the current
+server-side draft on opening and run transitions; run completion also refreshes
+the overview. A deterministic regression holds a stale card snapshot and delays
+the readiness response, confirming that publication stays disabled until fresh
+verification evidence arrives and permissions are acknowledged. No permission,
+approval or verification gate is bypassed, and no test timeout was increased.
+
 Final integrated suite passed: **555 tests, 554 passed, 0 failed, 1 skipped**, in
 1,249,085 ms (20 minutes 49 seconds). Complete output:
 `work/release-final-suite.log`. This includes the failed-close/startup regressions,

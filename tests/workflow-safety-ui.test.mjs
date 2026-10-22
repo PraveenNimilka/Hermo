@@ -64,8 +64,28 @@ test('owner reviews permissions, approves a real step and manages isolated workf
     await dialog.getByRole('button',{name:'Review approval',exact:true}).click();alert=page.getByRole('alertdialog');await alert.getByRole('button',{name:'Approve this step',exact:true}).click();
     assert.equal((await terminal(run.id)).status,'succeeded');assert.equal(submissions,2,'one approval executes exactly one click');
     await dialog.getByText('Result verified',{exact:true}).waitFor();await dialog.getByRole('button',{name:'Close dialog',exact:true}).click();
-    await page.getByRole('button',{name:'Actions',exact:true}).click();await card().getByRole('button',{name:'Test action',exact:true}).click();dialog=page.getByRole('dialog');publish=dialog.getByRole('button',{name:'Publish API',exact:true});
-    await dialog.getByRole('checkbox',{name:acknowledgment}).check();await publish.click();await page.getByRole('heading',{name:'Your action is ready.',exact:true}).waitFor();
+    // Force the card to retain a pre-completion snapshot, independently of host
+    // speed and the periodic overview refresh. Opening the dialog must recheck
+    // the canonical workflow before permitting publication.
+    const staleOverview=await ok('/studio/overview');
+    staleOverview.workflows.find(item=>item.id===wid).tested=false;
+    let refreshOnOpen=false,releaseRefresh,refreshRequested;
+    const refreshGate=new Promise(done=>releaseRefresh=done),refreshStarted=new Promise(done=>refreshRequested=done);
+    const overviewRoute=async route=>{
+      if(!refreshOnOpen)return route.fulfill({json:staleOverview});
+      refreshRequested();await refreshGate;await route.continue();
+    };
+    await page.route('**/studio/overview?*',overviewRoute);
+    await page.reload();await page.getByRole('button',{name:'Actions',exact:true}).click();
+    refreshOnOpen=true;
+    await card().getByRole('button',{name:'Test action',exact:true}).click();dialog=page.getByRole('dialog');publish=dialog.getByRole('button',{name:'Publish API',exact:true});
+    try{
+      await dialog.getByRole('checkbox',{name:acknowledgment}).check();
+      assert.equal(await publish.isDisabled(),true,'stale card data cannot authorize publication while readiness refresh is pending');
+      await refreshStarted;releaseRefresh();
+      await page.waitForFunction(()=>[...document.querySelectorAll('[role=dialog] button')].some(button=>button.textContent.trim()==='Publish API'&&!button.disabled));
+    }finally{releaseRefresh();await page.unroute('**/studio/overview?*',overviewRoute);}
+    await publish.click();await page.getByRole('heading',{name:'Your action is ready.',exact:true}).waitFor();
     const firstKey=await page.locator('.secret-box code').textContent();assert.ok(firstKey?.startsWith('hm_live_'));assert.equal((await call('/v1/action-contract',undefined,authorization(firstKey))).status,200);
     await page.getByRole('dialog').getByRole('button',{name:'Done',exact:true}).click();assert.equal(await page.getByText(firstKey,{exact:true}).count(),0,'new key is removed after closing its one-time reveal');
     const sibling=await ok('/studio/keys',{workflow_id:wid,name:'Sibling integration'}),revokable=await ok('/studio/keys',{workflow_id:wid,name:'Disposable integration'});

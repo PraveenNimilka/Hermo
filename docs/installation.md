@@ -52,7 +52,7 @@ retrieval, separately run `npx.cmd playwright install chromium`.
 Windows PowerShell:
 
 ```powershell
-git clone --branch v0.1.0-beta.1 https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.2 https://github.com/PraveenNimilka/Hermo.git
 cd Hermo
 npm.cmd ci
 npx.cmd playwright install chromium
@@ -63,7 +63,7 @@ npm.cmd start
 macOS or Linux:
 
 ```sh
-git clone --branch v0.1.0-beta.1 https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.2 https://github.com/PraveenNimilka/Hermo.git
 cd Hermo
 npm ci
 npx playwright install chromium

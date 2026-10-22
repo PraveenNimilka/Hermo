@@ -18,7 +18,7 @@ dashboard and opens it when ready. Keep the terminal window open.
 To run the same setup manually in PowerShell:
 
 ```powershell
-git clone --branch v0.1.0-beta.1 https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.2 https://github.com/PraveenNimilka/Hermo.git
 Set-Location Hermo
 npm.cmd ci
 npx.cmd playwright install chromium

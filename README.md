@@ -31,7 +31,7 @@ Internet access is required during initial setup; Node.js must already be instal
 For a terminal installation of this beta:
 
 ```powershell
-git clone --branch v0.1.0-beta.1 https://github.com/PraveenNimilka/Hermo.git
+git clone --branch v0.1.0-beta.2 https://github.com/PraveenNimilka/Hermo.git
 cd Hermo
 npm.cmd ci
 npm.cmd run build
